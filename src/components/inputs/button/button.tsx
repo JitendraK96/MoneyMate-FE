@@ -30,7 +30,7 @@ const Button = ({
     <ShadButton
       type={type}
       variant={variant}
-      className={`border-[var(--primary)] ${className}`}
+      className={`bg-[var(--palette-button)] text-[var(--palette-text-tertiary)] pt-5 pb-5 hover:bg-[var(--palette-button-hover)] hover:text-[var(--palette-text-tertiary)] ${className}`}
     >
       {isLoading && <Loader2 className="animate-spin" />}
       {icon}

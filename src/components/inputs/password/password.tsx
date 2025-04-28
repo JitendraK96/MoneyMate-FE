@@ -14,6 +14,7 @@ interface PasswordProps {
   showPassword: boolean;
   setShowPassword: (flag: boolean) => void;
   label: string;
+  className?: string;
 }
 
 const Password = ({
@@ -22,21 +23,24 @@ const Password = ({
   showPassword,
   setShowPassword,
   label,
+  className,
 }: PasswordProps) => {
   return (
     <FormItem>
-      <FormLabel>{label}</FormLabel>
+      <FormLabel className="text-[var(--palette-text-primary)] font-size-small">
+        {label}
+      </FormLabel>
       <FormControl>
         <div className="relative">
           <Input
             {...field}
             type={showPassword ? "text" : "password"}
             placeholder={placeholder ? placeholder : ""}
-            className="text-[var(--secondary)] font-extra-small border-[0.5px] border-[var(--primary)] focus-visible:ring-1 pt-5 pb-5"
+            className={`text-[var(--palette-text-primary)] font-size-small border-[0.5px] border-[var(--palette-text-secondary)] focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
           />
           <div
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--secondary)]"
+            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--palette-text-secondary)]"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </div>

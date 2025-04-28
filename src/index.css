@@ -44,19 +44,25 @@
 }
 
 :root {
-  --primary: #0e1511;
-  --secondary: #6b7280;
-  --tertiary: #fff;
-  --font-primary: #282828;
-  --font-secondary: #fefffd;
+  --palette-background-primary: #ffffff;
+  --palette-background-secondary: #fafbfb;
+  --palette-text-primary: #1c252e;
+  --palette-text-secondary: #637381;
+  --palette-text-tertiary: #ffffff;
+  --palette-button: #1c252e;
+  --palette-button-hover: #454f5b;
+  --palette-primary-main: #7635dc;
 }
 
 .dark {
-  --primary: #0e1511;
-  --secondary: #6b7280;
-  --tertiary: #fff;
-  --font-primary: #282828;
-  --font-secondary: #fefffd;
+  --palette-background-primary: #141a21;
+  --palette-background-secondary: #23272c;
+  --palette-text-primary: #ffffff;
+  --palette-text-secondary: #919eab;
+  --palette-text-tertiary: #1c252e;
+  --palette-button: #ffffff;
+  --palette-button-hover: #c4cdd5;
+  --palette-primary-main: #7635dc;
 }
 
 @layer base {
@@ -95,15 +101,19 @@
 
 body {
   font-family: "PoppinsRegular";
-  word-spacing: 1px;
+  word-spacing: 2px;
 }
 
-.font-extra-large {
-  font-size: 25px;
+.font-size-large {
+  font-size: 28px;
 }
 
-.font-extra-small {
-  font-size: 13px;
+.font-size-medium {
+  font-size: 18px;
+}
+
+.font-size-small {
+  font-size: 12px;
 }
 
 .font-regular {
