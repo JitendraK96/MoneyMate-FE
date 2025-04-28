@@ -12,18 +12,21 @@ interface InputProps {
   type?: string;
   placeholder?: string;
   label: string;
+  className?: string;
 }
 
-const Input = ({ field, placeholder, type, label }: InputProps) => {
+const Input = ({ field, placeholder, type, label, className }: InputProps) => {
   return (
     <FormItem>
-      <FormLabel>{label}</FormLabel>
+      <FormLabel className="text-[var(--palette-text-primary)] font-size-small">
+        {label}
+      </FormLabel>
       <FormControl>
         <ShadInput
           {...field}
           type={type}
           placeholder={placeholder ? placeholder : ""}
-          className="text-[var(--secondary)] font-extra-small border-[0.5px] border-[var(--primary)] focus-visible:ring-1 pt-5 pb-5"
+          className={`text-[var(--palette-text-primary)] font-size-small border-[0.5px] border-[var(--palette-text-secondary)] focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
         />
       </FormControl>
       <FormMessage />

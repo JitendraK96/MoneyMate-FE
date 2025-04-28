@@ -1,15 +1,12 @@
 import { useState } from "react";
-import Budget from "@/assets/videos/budget.mp4";
-import Logo from "@/assets/images/f-logo-light.svg";
 import { Form, FormField } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Input, Password, Button } from "@/components/inputs";
-import { Separator } from "@/components/ui/separator";
-import { FcGoogle } from "react-icons/fc";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import Accesscontrol from "@/components/accesscontrol";
 
 const FormSchema = z.object({
   emailaddress: z
@@ -50,7 +47,7 @@ const Signin = () => {
 
     if (error) {
       console.error("Login error:", error.message);
-      alert(error.message); // or show a toast
+      alert(error.message);
       setIsLoading(false);
       return;
     }
@@ -59,29 +56,21 @@ const Signin = () => {
     navigate("/dashboard");
   };
 
+  const handleSignupRedirect = () => {
+    navigate("/signup");
+  };
+
   return (
-    <div className="signup flex justify-between h-full">
-      <div className="basis-[50%] bg-[var(--tertiary)] relative">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src={Budget} type="video/mp4" />
-        </video>
-        <img src={Logo} alt="Logo" className="absolute top-5 left-5 w-50" />
-      </div>
-      <div className="basis-[50%] bg-[var(--tertiary)] pt-20 pr-30 pb-20 pl-30">
-        <h4 className="text-[var(--font-primary)] font-extra-large font-bold">
-          Sign in to MoneyMate
-        </h4>
-        <h6 className="text-[var(--secondary)] font-extra-small mt-[2px] mb-10">
-          Enter your account details below
-        </h6>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Accesscontrol
+      formTitle="Sign in to MoneyMate"
+      formSubTitle="Don’t have an account?"
+      title="Hi, Welcome back"
+      onSubTitleNavigateTitleClick={handleSignupRedirect}
+      subTitleNavigateTitle="Get started"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="">
+          <div className="mt-5 mb-10 space-y-5">
             <FormField
               control={form.control}
               name="emailaddress"
@@ -107,27 +96,17 @@ const Signin = () => {
                 />
               )}
             />
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              title="Submit"
-              variant={"outline"}
-              className="w-full"
-            />
-          </form>
-        </Form>
-        <Separator className="mt-10 mb-10 bg-[var(--secondary)] opacity-10" />
-        <div className="flex justify-center">
+          </div>
           <Button
-            icon={<FcGoogle size={20} />}
-            type="button"
-            title="Sign In with Google"
+            type="submit"
+            isLoading={isLoading}
+            title="Submit"
             variant={"outline"}
-            className="rounded-[10px] border-[var(--secondary)]"
+            className="w-full"
           />
-        </div>
-      </div>
-    </div>
+        </form>
+      </Form>
+    </Accesscontrol>
   );
 };
 
