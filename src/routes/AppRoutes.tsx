@@ -2,12 +2,13 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../pages/dashboard";
 import Signin from "@/pages/signin";
+import Signup from "@/pages/signup";
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/signin" element={<Signin />} />
-      <Route path="/signup" element={<>SignUp</>} />
+      <Route path="/signup" element={<Signup />} />
 
       <Route
         path="/dashboard/*"

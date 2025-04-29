@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --breakpoint-lg: 900px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -44,25 +45,39 @@
 }
 
 :root {
+  --radius: 8px;
   --palette-background-primary: #ffffff;
-  --palette-background-secondary: #fafbfb;
-  --palette-text-primary: #1c252e;
-  --palette-text-secondary: #637381;
-  --palette-text-tertiary: #ffffff;
-  --palette-button: #1c252e;
-  --palette-button-hover: #454f5b;
-  --palette-primary-main: #7635dc;
+  /* --palette-background-secondary: #fafbfb; */
+  --palette-text-primary: #212121;
+  --palette-text-secondary: #4d4d4d;
+  --palette-text-tertiary: #1e1e1e;
+  --palette-text-input: #b3b3b3;
+  --palette-text-title: #212121;
+  --palette-button: #4461f2;
+  --palette-button-text: #ffffff;
+  --palette-primary-link: #2c67f3;
+  --palette-background-opacity: #000000;
+  --palette-border: #d9d9d9;
+  --palette-text-placeholder: #b3b3b3;
+  --palette-input-background: #ffffff;
 }
 
 .dark {
-  --palette-background-primary: #141a21;
-  --palette-background-secondary: #23272c;
+  --radius: 8px;
+  --palette-background-primary: #171717;
+  /* --palette-background-secondary: #23272c; */
   --palette-text-primary: #ffffff;
-  --palette-text-secondary: #919eab;
-  --palette-text-tertiary: #1c252e;
-  --palette-button: #ffffff;
-  --palette-button-hover: #c4cdd5;
-  --palette-primary-main: #7635dc;
+  --palette-text-secondary: #ffffff;
+  --palette-text-tertiary: #ffffff;
+  --palette-text-input: #b3b3b3;
+  --palette-text-title: #ffffff;
+  --palette-button: #4461f2;
+  --palette-button-text: #ffffff;
+  --palette-primary-link: #2c67f3;
+  --palette-background-opacity: #000000;
+  --palette-border: transparent;
+  --palette-text-placeholder: #b3b3b3;
+  --palette-input-background: #212121;
 }
 
 @layer base {
@@ -105,7 +120,7 @@ body {
 }
 
 .font-size-large {
-  font-size: 28px;
+  font-size: 38px;
 }
 
 .font-size-medium {
@@ -113,7 +128,7 @@ body {
 }
 
 .font-size-small {
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .font-regular {
@@ -126,4 +141,8 @@ body {
 
 .font-bold {
   font-family: "PoppinsBold";
+}
+
+.border-radius {
+  border-radius: 8px;
 }

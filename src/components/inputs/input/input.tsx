@@ -18,7 +18,7 @@ interface InputProps {
 const Input = ({ field, placeholder, type, label, className }: InputProps) => {
   return (
     <FormItem>
-      <FormLabel className="text-[var(--palette-text-primary)] font-size-small">
+      <FormLabel className="text-[var(--palette-text-tertiary)] font-size-small">
         {label}
       </FormLabel>
       <FormControl>
@@ -26,7 +26,7 @@ const Input = ({ field, placeholder, type, label, className }: InputProps) => {
           {...field}
           type={type}
           placeholder={placeholder ? placeholder : ""}
-          className={`text-[var(--palette-text-primary)] font-size-small border-[0.5px] border-[var(--palette-text-secondary)] focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
+          className={`text-[var(--palette-text-placeholder)] font-size-small border-[0.5px] border-[var(--palette-border)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
         />
       </FormControl>
       <FormMessage />
