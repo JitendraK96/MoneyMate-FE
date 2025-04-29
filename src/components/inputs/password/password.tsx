@@ -27,7 +27,7 @@ const Password = ({
 }: PasswordProps) => {
   return (
     <FormItem>
-      <FormLabel className="text-[var(--palette-text-primary)] font-size-small">
+      <FormLabel className="text-[var(--palette-text-tertiary)] font-size-small">
         {label}
       </FormLabel>
       <FormControl>
@@ -36,11 +36,11 @@ const Password = ({
             {...field}
             type={showPassword ? "text" : "password"}
             placeholder={placeholder ? placeholder : ""}
-            className={`text-[var(--palette-text-primary)] font-size-small border-[0.5px] border-[var(--palette-text-secondary)] focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
+            className={`text-[var(--palette-text-placeholder)] font-size-small border-[0.5px] border-[var(--palette-border)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
           />
           <div
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--palette-text-secondary)]"
+            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--palette-text-placeholder)]"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </div>

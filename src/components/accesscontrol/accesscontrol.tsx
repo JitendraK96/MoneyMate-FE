@@ -1,10 +1,9 @@
-import Logo from "@/assets/images/f-logo-dark.svg";
-import Main from "@/assets/images/main.webp";
+import Budget from "@/assets/videos/budget.mp4";
+import Logo from "@/assets/images/f-logo-light.svg";
 import { ReactNode } from "react";
 
 interface AccessControlProps {
   children: ReactNode;
-  title: string;
   formTitle: string;
   formSubTitle: string;
   onSubTitleNavigateTitleClick: () => void;
@@ -13,7 +12,6 @@ interface AccessControlProps {
 
 const accesscontrol = ({
   children,
-  title,
   formTitle,
   formSubTitle,
   subTitleNavigateTitle,
@@ -21,27 +19,32 @@ const accesscontrol = ({
 }: AccessControlProps) => {
   return (
     <div className="signup flex justify-between h-full">
-      <div className="basis-[35%] bg-[var(--palette-background-secondary)] pl-8 pr-8 pt-8 pb-8">
-        <img src={Logo} alt="Logo" className="max-w-[200px]" />
-        <div className="flex flex-col items-center mt-[40px] mb-[40px]">
-          <h3 className="font-size-large font-bold text-[var(--palette-text-primary)]">
-            {title}
-          </h3>
-          <span className="font-size-small text-[var(--palette-text-secondary)]">
-            Your budget companion.
-          </span>
-        </div>
-        <img src={Main} alt="Main" className="w-full" />
+      <div className="hidden lg:flex basis-[50%] bg-[var(--palette-background-secondary)] pl-8 pr-8 pt-8 pb-8 relative">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute top-0 left-0 w-full h-full object-cover"
+        >
+          <source src={Budget} type="video/mp4" />
+        </video>
+        <div className="absolute top-0 left-0 w-full h-full bg-[var(--palette-background-opacity)] opacity-50" />
+        <img
+          src={Logo}
+          alt="Logo"
+          className="max-w-[200px] z-1  absolute top-10 left-10"
+        />
       </div>
-      <div className="basis-[65%] flex items-center justify-center flex-col">
-        <div className="w-[40%]">
-          <h4 className="font-size-medium font-bold text-[var(--palette-text-primary)]">
+      <div className="basis-[100%] lg:basis-[50%] flex items-center justify-center flex-col">
+        <div className="max-w-[538px]">
+          <h4 className="font-size-large font-bold text-[var(--palette-text-primary)]">
             {formTitle}
           </h4>
-          <h6 className="font-size-small text-[var(--palette-text-secondary)]">
+          <h6 className="font-size-medium text-[var(--palette-text-secondary)]">
             {formSubTitle}
             <span
-              className="ml-1 text-[var(--palette-primary-main)] cursor-pointer"
+              className="ml-2 text-[var(--palette-primary-link)] cursor-pointer underline"
               onClick={onSubTitleNavigateTitleClick}
             >
               {subTitleNavigateTitle}

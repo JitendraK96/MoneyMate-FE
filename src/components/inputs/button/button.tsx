@@ -4,7 +4,7 @@ import { Button as ShadButton } from "@/components/ui/button";
 interface ButtonProps {
   type: "button" | "submit" | "reset" | undefined;
   isLoading?: boolean;
-  title: string;
+  title: string | React.ReactNode;
   className?: string;
   variant?:
     | "link"
@@ -30,7 +30,7 @@ const Button = ({
     <ShadButton
       type={type}
       variant={variant}
-      className={`bg-[var(--palette-button)] text-[var(--palette-text-tertiary)] pt-5 pb-5 hover:bg-[var(--palette-button-hover)] hover:text-[var(--palette-text-tertiary)] ${className}`}
+      className={`bg-[var(--palette-button)] text-[var(--palette-button-text)] pt-[22px] pb-[22px] cursor-pointer rounded-lg font-size-small hover:bg-[var(--palette-button)] hover:text-[var(--palette-button-text)] border-0 w-full ${className}`}
     >
       {isLoading && <Loader2 className="animate-spin" />}
       {icon}
