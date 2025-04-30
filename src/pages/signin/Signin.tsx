@@ -103,7 +103,7 @@ const Signin = () => {
             isLoading={isLoading}
             title="Submit"
             variant={"outline"}
-            className="w-full"
+            className="w-full !bg-[var(--palette-button)]"
           />
         </form>
       </Form>
