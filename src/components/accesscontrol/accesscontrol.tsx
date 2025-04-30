@@ -52,30 +52,30 @@ const Accesscontrol = ({
           className="max-w-[200px] z-1  absolute top-10 left-10"
         />
       </div>
-      <div className="basis-[100%] lg:basis-[50%] flex items-center justify-center flex-col relative">
-        <div className="absolute flex justify-between items-center top-4 left-[30px] right-[30px]">
-          <img
-            src={theme === "dark" ? MobileLogoDark : MobileLogoLight}
-            alt="MoneyMate"
-            className={isMobileView ? "visible" : "invisible"}
-          />
-          {theme === "dark" ? (
-            <div
-              className="p-4 bg-[var(--palette-shadow)] rounded-4xl cursor-pointer"
-              onClick={toggleTheme}
-            >
-              <CiLight size={20} />
-            </div>
-          ) : (
-            <div
-              className="p-4 bg-[var(--palette-shadow)] rounded-4xl cursor-pointer"
-              onClick={toggleTheme}
-            >
-              <CiDark size={20} />
-            </div>
-          )}
-        </div>
+      <div className="basis-[100%] lg:basis-[50%] flex items-center justify-center flex-col">
         <div className="max-w-[538px]">
+          <div className="flex justify-between items-center mb-5">
+            <img
+              src={theme === "dark" ? MobileLogoDark : MobileLogoLight}
+              alt="MoneyMate"
+              className={isMobileView ? "visible" : "invisible"}
+            />
+            {theme === "dark" ? (
+              <div
+                className="p-4 bg-[var(--palette-shadow)] rounded-4xl cursor-pointer"
+                onClick={toggleTheme}
+              >
+                <CiLight size={20} />
+              </div>
+            ) : (
+              <div
+                className="p-4 bg-[var(--palette-shadow)] rounded-4xl cursor-pointer"
+                onClick={toggleTheme}
+              >
+                <CiDark size={20} />
+              </div>
+            )}
+          </div>
           <h4 className="font-size-large font-semibold text-[var(--palette-text-primary)]">
             {formTitle}
           </h4>
