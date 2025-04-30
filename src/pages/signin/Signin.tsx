@@ -58,6 +58,20 @@ const Signin = () => {
     navigate("/dashboard");
   };
 
+  const handleGoogleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+
+    if (error) {
+      console.error("Google login error:", error.message);
+      alert("Google login failed. Please try again.");
+    }
+  };
+
   const handleSignupRedirect = () => {
     navigate("/signup");
   };
@@ -116,6 +130,7 @@ const Signin = () => {
       </div>
       <Button
         variant="outline"
+        onClick={handleGoogleSignIn}
         type="button"
         title={
           <span className="text-[var(--palette-text-tertiary)] font-size-small">
