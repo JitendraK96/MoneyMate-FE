@@ -124,7 +124,7 @@ const Signup = () => {
             isLoading={isLoading}
             title="Create account"
             variant={"outline"}
-            className="w-full"
+            className="w-full !bg-[var(--palette-button)]"
           />
         </form>
       </Form>

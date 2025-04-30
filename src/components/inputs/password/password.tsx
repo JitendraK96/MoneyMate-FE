@@ -36,7 +36,7 @@ const Password = ({
             {...field}
             type={showPassword ? "text" : "password"}
             placeholder={placeholder ? placeholder : ""}
-            className={`text-[var(--palette-text-placeholder)] font-size-small border-[0.5px] border-[var(--palette-border)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 ${className}`}
+            className={`text-[var(--palette-text-placeholder)] font-size-small border-[0.5px] border-[var(--palette-border)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 !bg-[var(--palette-input-background)] ${className}`}
           />
           <div
             onClick={() => setShowPassword(!showPassword)}
