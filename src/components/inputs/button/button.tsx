@@ -16,6 +16,7 @@ interface ButtonProps {
     | null
     | undefined;
   icon?: React.ReactNode;
+  onClick?: () => void;
 }
 
 const Button = ({
@@ -25,10 +26,12 @@ const Button = ({
   variant = "default",
   className = "",
   icon,
+  onClick,
 }: ButtonProps) => {
   return (
     <ShadButton
       type={type}
+      onClick={onClick}
       variant={variant}
       className={`bg-[var(--palette-button)] text-[var(--palette-button-text)] pt-[22px] pb-[22px] cursor-pointer rounded-lg font-size-small hover:bg-[var(--palette-button)] hover:text-[var(--palette-button-text)] border-0 w-full ${className}`}
     >
