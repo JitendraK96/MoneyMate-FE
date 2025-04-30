@@ -46,7 +46,7 @@ const Password = ({
           </div>
         </div>
       </FormControl>
-      <FormMessage />
+      <FormMessage className="font-size-extra-small text-[var(--palette-error)]" />
     </FormItem>
   );
 };

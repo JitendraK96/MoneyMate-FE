@@ -61,6 +61,7 @@
   --palette-text-placeholder: #b3b3b3;
   --palette-input-background: #ffffff;
   --palette-shadow: #f7f7f7;
+  --palette-error: #f87171;
 }
 
 .dark {
@@ -80,6 +81,7 @@
   --palette-text-placeholder: #b3b3b3;
   --palette-input-background: #212121;
   --palette-shadow: #212121;
+  --palette-error: #f87171;
 }
 
 @layer base {
@@ -130,6 +132,10 @@ body {
 }
 
 .font-size-small {
+  font-size: 16px;
+}
+
+.font-size-extra-small {
   font-size: 16px;
 }
 
