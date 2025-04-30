@@ -60,6 +60,7 @@
   --palette-border: #d9d9d9;
   --palette-text-placeholder: #b3b3b3;
   --palette-input-background: #ffffff;
+  --palette-shadow: #f7f7f7;
 }
 
 .dark {
@@ -78,6 +79,7 @@
   --palette-border: transparent;
   --palette-text-placeholder: #b3b3b3;
   --palette-input-background: #212121;
+  --palette-shadow: #212121;
 }
 
 @layer base {
@@ -133,6 +135,10 @@ body {
 
 .font-regular {
   font-family: "PoppinsRegular";
+}
+
+.font-semibold {
+  font-family: "PoppinsSemiBold";
 }
 
 .font-light {
