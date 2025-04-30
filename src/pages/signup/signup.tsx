@@ -13,7 +13,7 @@ import { FcGoogle } from "react-icons/fc";
 const FormSchema = z.object({
   name: z
     .string()
-    .min(3, { message: "Password must be at least 3 characters long." }),
+    .min(3, { message: "Name must be at least 3 characters long." }),
   emailaddress: z
     .string()
     .email({ message: "Please enter a valid email address." }),
