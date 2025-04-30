@@ -53,7 +53,7 @@ const Accesscontrol = ({
         />
       </div>
       <div className="basis-[100%] lg:basis-[50%] flex items-center justify-center flex-col relative">
-        <div className="absolute flex justify-between items-center top-4 left-10 right-10">
+        <div className="absolute flex justify-between items-center top-3 left-10 right-10">
           <img
             src={theme === "dark" ? MobileLogoDark : MobileLogoLight}
             alt="MoneyMate"
