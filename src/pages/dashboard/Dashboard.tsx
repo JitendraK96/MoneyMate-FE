@@ -1,27 +1,20 @@
-import { Link, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import Sidebar from "@/components/sidebar";
 
 export default function DashboardLayout() {
-  console.log("DashboardLayout");
   return (
-    <div className="dashboard-layout">
-      <aside className="sidebar">
-        <nav>
-          <ul>
-            <li>
-              <Link to="/dashboard">Home</Link>
-            </li>
-            <li>
-              <Link to="/dashboard/expenses">Expenses</Link>
-            </li>
-            <li>
-              <Link to="/dashboard/goals">Goals</Link>
-            </li>
-          </ul>
-        </nav>
-      </aside>
-      <main className="content">
-        <Outlet />
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main Content Area */}
+        <div className="flex-1 relative">
+          <SidebarTrigger />
+          <Outlet />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
