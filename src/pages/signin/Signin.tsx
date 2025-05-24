@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import Accesscontrol from "@/components/accesscontrol";
 import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
+import { setUser } from "@/store/slices/userSlice";
+import { useDispatch } from "react-redux";
 
 const FormSchema = z.object({
   emailaddress: z
@@ -30,6 +32,7 @@ const Signin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -55,6 +58,14 @@ const Signin = () => {
     }
 
     console.log("Login successful:", loginData);
+
+    dispatch(
+      setUser({
+        id: loginData.user.id,
+        email: loginData.user?.email || "",
+        name: loginData.user.user_metadata?.name || "User",
+      })
+    );
     navigate("/dashboard");
   };
 
