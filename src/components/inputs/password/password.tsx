@@ -27,7 +27,7 @@ const Password = ({
 }: PasswordProps) => {
   return (
     <FormItem>
-      <FormLabel className="text-[var(--palette-text-tertiary)] font-size-small">
+      <FormLabel className="text-[var(--accesscontrol-textprimary)] font-size-small">
         {label}
       </FormLabel>
       <FormControl>
@@ -36,17 +36,17 @@ const Password = ({
             {...field}
             type={showPassword ? "text" : "password"}
             placeholder={placeholder ? placeholder : ""}
-            className={`text-[var(--palette-text-placeholder)] font-size-small border-[0.5px] border-[var(--palette-border)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 !bg-[var(--palette-input-background)] ${className}`}
+            className={`text-[var(--accesscontrol-textplaceholder)] font-size-small border-[0.5px] border-[var(--common-inputborder)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 !bg-[var(--accesscontrol-inputbackground)] ${className}`}
           />
           <div
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--palette-text-placeholder)]"
+            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--accesscontrol-textplaceholder)]"
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {!showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </div>
         </div>
       </FormControl>
-      <FormMessage className="font-size-extra-small text-[var(--palette-error)]" />
+      <FormMessage className="font-size-extra-small text-[var(--common-error)]" />
     </FormItem>
   );
 };
