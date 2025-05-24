@@ -38,6 +38,14 @@ const items = [
         title: "Overview",
         url: "/dashboard/overview",
       },
+      {
+        title: "Income",
+        url: "/dashboard/income",
+      },
+      {
+        title: "Expenses",
+        url: "/dashboard/expenses",
+      },
     ],
   },
   {
@@ -137,7 +145,7 @@ const Sidebar = () => {
                               <SidebarMenuButton
                                 asChild
                                 isActive={
-                                  currentPath === menu.url ||
+                                  currentPath.startsWith(menu.url) ||
                                   (menu.url === "/dashboard/overview" &&
                                     currentPath === "/dashboard")
                                 }
