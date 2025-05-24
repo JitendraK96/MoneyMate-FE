@@ -35,7 +35,7 @@ const Accesscontrol = ({
 
   return (
     <div className="signup flex justify-between h-full">
-      <div className="hidden lg:flex basis-[50%] bg-[var(--palette-background-secondary)] pl-8 pr-8 pt-8 pb-8 relative">
+      <div className="hidden lg:flex basis-[50%] pl-8 pr-8 pt-8 pb-8 relative">
         <video
           autoPlay
           loop
@@ -45,11 +45,11 @@ const Accesscontrol = ({
         >
           <source src={Budget} type="video/mp4" />
         </video>
-        <div className="absolute top-0 left-0 w-full h-full bg-[var(--palette-background-opacity)] opacity-50" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[var(--common-backgroundopacity)] opacity-50" />
         <img
           src={Logo}
           alt="Logo"
-          className="max-w-[200px] z-1  absolute top-10 left-10"
+          className="max-w-[200px] z-1 absolute top-10 left-10"
         />
       </div>
       <div className="basis-[100%] lg:basis-[50%] flex items-center justify-center flex-col">
@@ -62,27 +62,27 @@ const Accesscontrol = ({
             />
             {theme === "dark" ? (
               <div
-                className="p-4 bg-[var(--palette-shadow)] rounded-4xl cursor-pointer"
+                className="p-4 bg-[var(--accesscontrol-iconbackground)] rounded-4xl cursor-pointer"
                 onClick={toggleTheme}
               >
                 <CiLight size={20} />
               </div>
             ) : (
               <div
-                className="p-4 bg-[var(--palette-shadow)] rounded-4xl cursor-pointer"
+                className="p-4 bg-[var(--accesscontrol-iconbackground)] rounded-4xl cursor-pointer"
                 onClick={toggleTheme}
               >
                 <CiDark size={20} />
               </div>
             )}
           </div>
-          <h4 className="font-size-large font-semibold text-[var(--palette-text-primary)]">
+          <h4 className="font-size-large font-semibold text-[var(--accesscontrol-textprimary)]">
             {formTitle}
           </h4>
-          <h6 className="font-size-medium text-[var(--palette-text-secondary)]">
+          <h6 className="font-size-medium text-[var(--accesscontrol-textsecondary)]">
             {formSubTitle}
             <span
-              className="ml-2 text-[var(--palette-primary-link)] cursor-pointer underline"
+              className="ml-2 text-[var(--common-link)] cursor-pointer underline"
               onClick={onSubTitleNavigateTitleClick}
             >
               {subTitleNavigateTitle}

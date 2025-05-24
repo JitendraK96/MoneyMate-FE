@@ -46,58 +46,74 @@
 
 :root {
   --radius: 8px;
-  --palette-background-primary: #ffffff;
-  /* --palette-background-secondary: #fafbfb; */
-  --palette-text-primary: #212121;
-  --palette-text-secondary: #4d4d4d;
-  --palette-text-tertiary: #1e1e1e;
-  --palette-text-input: #b3b3b3;
-  --palette-text-title: #212121;
-  --palette-button: #4461f2;
-  --palette-button-text: #ffffff;
-  --palette-primary-link: #2c67f3;
-  --palette-background-opacity: #000000;
-  --palette-border: #d9d9d9;
-  --palette-text-placeholder: #b3b3b3;
-  --palette-input-background: #ffffff;
-  --palette-shadow: #f7f7f7;
-  --palette-error: #f87171;
-  --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --content: #f3f6fe;
+
+  /* common */
+  --common-link: #2c67f3;
+  --common-brand: #4461f2;
+  --common-white: #ffffff;
+  --common-seperator: #cac6d4;
+  --common-inputborder: #d9d9d9;
+  --common-backgroundopacity: #000000;
+  --common-error: #f87171;
+  /* common */
+
+  /* accesscontrol */
+  --accesscontrol-background: #ffffff;
+  --accesscontrol-textprimary: #1e1e1e;
+  --accesscontrol-textsecondary: #4d4d4d;
+  --accesscontrol-textplaceholder: #b3b3b3;
+  --accesscontrol-textaccent: #ffffff;
+  --accesscontrol-buttonborder: #bababa;
+  --accesscontrol-buttonbackground: #ffffff;
+  --accesscontrol-inputbackground: #ffffff;
+  --accesscontrol-iconbackground: #f7f7f7;
+  /* accesscontrol */
+
+  /* dashboard */
+  --sidebar-background: #ffffff;
+  --sidebar-border: rgba(243, 243, 243, 0.5);
+  --sidebar-hover: #2f6cf21f;
+  --sidebar-hoverborder: #2c67f3;
+  --sidebar-hovertext: #285edd;
+  --sidebar-text: #3f3f46;
+  /* dashboard */
 }
 
 .dark {
   --radius: 8px;
-  --palette-background-primary: #171717;
-  /* --palette-background-secondary: #23272c; */
-  --palette-text-primary: #ffffff;
-  --palette-text-secondary: #ffffff;
-  --palette-text-tertiary: #ffffff;
-  --palette-text-input: #b3b3b3;
-  --palette-text-title: #ffffff;
-  --palette-button: #4461f2;
-  --palette-button-text: #ffffff;
-  --palette-primary-link: #2c67f3;
-  --palette-background-opacity: #000000;
-  --palette-border: transparent;
-  --palette-text-placeholder: #b3b3b3;
-  --palette-input-background: #212121;
-  --palette-shadow: #212121;
-  --palette-error: #f87171;
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --content: #2b2b2b;
+
+  /* common */
+  --common-link: #2c67f3;
+  --common-brand: #4461f2;
+  --common-white: #ffffff;
+  --common-seperator: #cac6d4;
+  --common-inputborder: transparent;
+  --common-backgroundopacity: #000000;
+  --common-error: #f87171;
+  /* common */
+
+  /* accesscontrol */
+  --accesscontrol-background: #171717;
+  --accesscontrol-textprimary: #ffffff;
+  --accesscontrol-textsecondary: #ffffff;
+  --accesscontrol-textplaceholder: #b3b3b3;
+  --accesscontrol-textaccent: #ffffff;
+  --accesscontrol-buttonborder: #bababa;
+  --accesscontrol-buttonbackground: #171717;
+  --accesscontrol-inputbackground: #212121;
+  --accesscontrol-iconbackground: #212121;
+  /* accesscontrol */
+
+  /* dashboard */
+  --sidebar-background: #1f1f21;
+  --sidebar-border: rgba(243, 243, 243, 0.5);
+  --sidebar-hover: #2f6cf21f;
+  --sidebar-hoverborder: #2c67f3;
+  --sidebar-hovertext: #ffffff;
+  --sidebar-text: #ffffff;
+  /* dashboard */
 }
 
 @layer base {

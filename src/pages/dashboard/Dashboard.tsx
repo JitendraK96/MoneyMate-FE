@@ -1,17 +1,18 @@
 import { Outlet } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import Sidebar from "@/components/sidebar";
+import Header from "@/components/header";
 
 export default function DashboardLayout() {
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen">
+    <SidebarProvider className="bg-[var(--content)]">
+      <div className="flex min-h-screen w-full">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main Content Area */}
         <div className="flex-1 relative">
-          <SidebarTrigger />
+          <Header />
           <Outlet />
         </div>
       </div>

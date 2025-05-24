@@ -33,7 +33,7 @@ const Button = ({
       type={type}
       onClick={onClick}
       variant={variant}
-      className={`bg-[var(--palette-button)] text-[var(--palette-button-text)] pt-[22px] pb-[22px] cursor-pointer rounded-lg font-size-small hover:bg-[var(--palette-button)] hover:text-[var(--palette-button-text)] border-0 w-full ${className}`}
+      className={`bg-[var(--common-brand)] text-[var(--common-white)] pt-[22px] pb-[22px] cursor-pointer rounded-lg font-size-small hover:bg-[var(--common-brand)] hover:text-[var(--common-white)] border-0 w-full ${className}`}
     >
       {isLoading && <Loader2 className="animate-spin" />}
       {icon}

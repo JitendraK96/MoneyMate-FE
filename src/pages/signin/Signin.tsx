@@ -84,7 +84,7 @@ const Signin = () => {
       subTitleNavigateTitle="Get started"
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="mt-8 mb-10 space-y-5">
             <FormField
               control={form.control}
@@ -117,28 +117,28 @@ const Signin = () => {
             isLoading={isLoading}
             title="Submit"
             variant={"outline"}
-            className="w-full !bg-[var(--palette-button)]"
+            className="w-full !bg-[var(--common-brand)]"
           />
         </form>
       </Form>
       <div className="flex items-center gap-4 mt-[20px] mb-[20px]">
-        <Separator className="flex-1 bg-[var(--palette-text-placeholder)] opacity-40" />
-        <span className="text-[var(--palette-text-tertiary)] text-sm font-medium">
+        <Separator className="flex-1 bg-[var(--common-seperator)] opacity-40" />
+        <span className="text-[var(--accesscontrol-textsecondary)] text-sm font-medium">
           or
         </span>
-        <Separator className="flex-1 bg-[var(--palette-text-placeholder)] opacity-40" />
+        <Separator className="flex-1 bg-[var(--common-seperator)] opacity-40" />
       </div>
       <Button
         variant="outline"
         onClick={handleGoogleSignIn}
         type="button"
         title={
-          <span className="text-[var(--palette-text-tertiary)] font-size-small">
+          <span className="text-[var(--accesscontrol-textprimary)] font-size-small">
             Sign in with google
           </span>
         }
         icon={<FcGoogle size={20} />}
-        className="bg-transparent hover:bg-transparent !border-[0.5px] border-[var(--palette-border)]"
+        className="bg-transparent hover:bg-transparent !border-[0.5px] !border-[var(--accesscontrol-buttonborder)]"
       ></Button>
     </Accesscontrol>
   );

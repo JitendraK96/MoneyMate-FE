@@ -18,9 +18,11 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<>Home</>} />
-        <Route path="expenses" element={<>Expenses</>} />
+        <Route index element={<>Overview</>} />
+        <Route path="overview" element={<>Overview</>} />
         <Route path="goals" element={<>Goals</>} />
+        <Route path="emitracker" element={<>EMI Tracker</>} />
+        <Route path="reminders" element={<>Reminders</>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/signin" />} />
