@@ -6,13 +6,16 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Provider } from "react-redux";
 import { store } from "@/store";
+import { UserProvider } from "@/context/UserContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <BrowserRouter>
         <ThemeProvider>
-          <App />
+          <UserProvider>
+            <App />
+          </UserProvider>
         </ThemeProvider>
       </BrowserRouter>
     </Provider>

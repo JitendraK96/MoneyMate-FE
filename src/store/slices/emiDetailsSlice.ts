@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface EmiDetailsState {
-  loanAmount: number;
-  rateOfInterest: number;
-  tenure: number;
-  hikePercentage: number;
-  prepayments: { [month: number]: number };
+  form: {
+    loanAmount: number;
+    rateOfInterest: number;
+    tenure: number;
+    hikePercentage: number;
+    prepayments: { [month: number]: number };
+  };
   emiList: Array<{
     id: number;
     loan_amount: number;
@@ -17,11 +19,13 @@ interface EmiDetailsState {
 }
 
 const initialState: EmiDetailsState = {
-  loanAmount: 0,
-  rateOfInterest: 0,
-  tenure: 0,
-  hikePercentage: 0,
-  prepayments: {},
+  form: {
+    loanAmount: 0,
+    rateOfInterest: 0,
+    tenure: 0,
+    hikePercentage: 0,
+    prepayments: {},
+  },
   emiList: [],
 };
 
@@ -30,29 +34,29 @@ export const emiDetailsSlice = createSlice({
   initialState,
   reducers: {
     setLoanAmount: (state, action: PayloadAction<number>) => {
-      state.loanAmount = action.payload;
+      state.form.loanAmount = action.payload;
     },
     setRateOfInterest: (state, action: PayloadAction<number>) => {
-      state.rateOfInterest = action.payload;
+      state.form.rateOfInterest = action.payload;
     },
     setTenure: (state, action: PayloadAction<number>) => {
-      state.tenure = action.payload;
+      state.form.tenure = action.payload;
     },
     setHikePercentage: (state, action: PayloadAction<number>) => {
-      state.hikePercentage = action.payload;
+      state.form.hikePercentage = action.payload;
     },
     setPrepayment: (
       state,
       action: PayloadAction<{ month: number; amount: number }>
     ) => {
-      state.prepayments[action.payload.month] = action.payload.amount;
+      state.form.prepayments[action.payload.month] = action.payload.amount;
     },
-    resetEmiDetails: (state) => {
-      state.loanAmount = initialState.loanAmount;
-      state.rateOfInterest = initialState.rateOfInterest;
-      state.tenure = initialState.tenure;
-      state.hikePercentage = initialState.hikePercentage;
-      state.prepayments = {};
+    resetEmiForm: (state) => {
+      state.form.loanAmount = initialState.form.loanAmount;
+      state.form.rateOfInterest = initialState.form.rateOfInterest;
+      state.form.tenure = initialState.form.tenure;
+      state.form.hikePercentage = initialState.form.hikePercentage;
+      state.form.prepayments = {};
     },
     setEmiList: (state, action: PayloadAction<EmiDetailsState["emiList"]>) => {
       state.emiList = action.payload;
@@ -66,7 +70,7 @@ export const {
   setTenure,
   setHikePercentage,
   setPrepayment,
-  resetEmiDetails,
+  resetEmiForm,
   setEmiList,
 } = emiDetailsSlice.actions;
 

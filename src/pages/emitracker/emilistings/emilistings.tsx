@@ -4,23 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { RootState } from "@/store";
 import { setEmiList } from "@/store/slices/emiDetailsSlice";
+import { useUser } from "@/context/UserContext";
 
 const EmiListing = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { user } = useUser();
 
   // Fetch EMI list from Redux
   const emiList = useSelector((state: RootState) => state.emiDetails.emiList);
 
   useEffect(() => {
     const fetchEmiDetails = async () => {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        console.error("Error fetching user:", userError?.message);
+      if (!user) {
         alert("Failed to fetch user. Please log in again.");
         return;
       }
