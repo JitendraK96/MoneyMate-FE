@@ -3,7 +3,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../pages/dashboard";
 import Signin from "@/pages/signin";
 import Signup from "@/pages/signup";
-import EmiDetails from "@/pages/emidetails";
+import EmiDetails from "@/pages/emitracker/emidetails";
 import EmiListing from "@/pages/emitracker/emilistings";
 
 const AppRoutes = () => {

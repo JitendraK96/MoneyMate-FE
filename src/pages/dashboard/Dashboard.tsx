@@ -27,7 +27,7 @@ export default function DashboardLayout() {
     };
 
     fetchUser();
-  }, [setUser]);
+  }, []);
 
   return (
     <SidebarProvider className="bg-[var(--content)]">
