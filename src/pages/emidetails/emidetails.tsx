@@ -6,10 +6,12 @@ import {
   setTenure,
   setHikePercentage,
   setPrepayment,
+  resetEmiForm,
 } from "@/store/slices/emiDetailsSlice";
 import { RootState } from "@/store";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useUser } from "@/context/UserContext";
 
 const EmiDetails = () => {
   const { id } = useParams();
@@ -21,7 +23,12 @@ const EmiDetails = () => {
   const [loading, setLoading] = useState(false); // State to handle loading
   // Fetch EMI details from Redux store
   const { loanAmount, rateOfInterest, tenure, hikePercentage, prepayments } =
-    useSelector((state: RootState) => state.emiDetails);
+    useSelector((state: RootState) => state.emiDetails.form);
+  const { user } = useUser();
+
+  useEffect(() => {
+    dispatch(resetEmiForm());
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchEmiDetails = async () => {
@@ -30,6 +37,7 @@ const EmiDetails = () => {
         .from("emi_details")
         .select("*")
         .eq("id", id)
+        .eq("user_id", user.id)
         .single(); // Fetch the EMI details for the given ID
 
       if (error) {
@@ -138,6 +146,7 @@ const EmiDetails = () => {
         hike_percentage: hikePercentage,
         prepayments: prepayments, // Pass prepayments as a JSON object
       })
+      .eq("user_id", user.id)
       .eq("id", id); // Update the row with the given ID
 
     if (error) {
@@ -151,13 +160,7 @@ const EmiDetails = () => {
   };
 
   const handleCreate = async () => {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      console.error("Error fetching user:", userError?.message);
+    if (!user) {
       alert("Failed to fetch user. Please log in again.");
       return;
     }

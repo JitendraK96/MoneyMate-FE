@@ -5,13 +5,12 @@ import { CiLight, CiDark } from "react-icons/ci";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { clearUser } from "@/store/slices/userSlice";
+import { useUser } from "@/context/UserContext";
 
 const Header = () => {
   const { theme, toggleTheme } = useThemeToggle();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const { clearUser } = useUser();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -20,7 +19,7 @@ const Header = () => {
       alert("Failed to log out. Please try again.");
       return;
     }
-    dispatch(clearUser());
+    clearUser();
     navigate("/signin");
   };
 
