@@ -80,6 +80,7 @@ const Signin = () => {
     }
 
     const { data: userData } = await supabase.auth.getUser();
+    console.log("Google login successful:", userData);
     setUser({
       id: userData.user!.id,
       email: userData?.user?.email || "",
