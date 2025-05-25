@@ -87,6 +87,13 @@ const Signup = () => {
       console.error("Google signup error:", error.message);
       alert("Google Signup failed. Please try again.");
     }
+
+    const { data: userData } = await supabase.auth.getUser();
+    setUser({
+      id: userData.user!.id,
+      email: userData?.user?.email || "",
+      fullName: userData.user?.user_metadata?.full_name || "",
+    });
   };
 
   const handleSigninRedirect = () => {
