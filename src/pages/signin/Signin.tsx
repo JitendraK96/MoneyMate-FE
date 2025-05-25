@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import Accesscontrol from "@/components/accesscontrol";
 import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
-import { useUser } from "@/context/UserContext";
 
 const FormSchema = z.object({
   emailaddress: z
@@ -31,7 +30,6 @@ const Signin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useUser();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -57,12 +55,6 @@ const Signin = () => {
     }
 
     console.log("Login successful:", loginData);
-
-    setUser({
-      id: loginData.user.id,
-      email: loginData.user?.email || "",
-      fullName: loginData.user.user_metadata?.full_name || "",
-    });
     navigate("/dashboard");
   };
 
@@ -78,14 +70,6 @@ const Signin = () => {
       console.error("Google login error:", error.message);
       alert("Google login failed. Please try again.");
     }
-
-    const { data: userData } = await supabase.auth.getUser();
-    console.log("Google login successful:", userData);
-    setUser({
-      id: userData.user!.id,
-      email: userData?.user?.email || "",
-      fullName: userData.user?.user_metadata?.full_name || "",
-    });
   };
 
   const handleSignupRedirect = () => {

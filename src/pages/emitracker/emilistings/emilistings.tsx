@@ -21,7 +21,6 @@ const EmiListing = () => {
         return;
       }
 
-      console.log(user, "---> user");
       // Fetch EMI details for the logged-in user
       const { data, error } = await supabase
         .from("emi_details")
