@@ -36,7 +36,7 @@ export default function DashboardLayout() {
         <Sidebar />
 
         {/* Main Content Area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0">
           <Header />
           <Outlet />
         </div>

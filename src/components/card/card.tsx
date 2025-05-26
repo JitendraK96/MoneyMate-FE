@@ -14,14 +14,14 @@ type CardProps = {
 
 const Card = ({ title, headerContent, cardContent }: CardProps) => {
   return (
-    <ShadcnCard className="bg-[var(--content-background)] border-0">
+    <ShadcnCard className="bg-[var(--content-background)] border-0 gap-1 mt-5">
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-[var(--content-textprimary)] card-header-title">
           {title}
         </CardTitle>
         {headerContent}
       </CardHeader>
-      <CardContent>{cardContent}</CardContent>
+      <CardContent className="overflow-scroll">{cardContent}</CardContent>
       <CardFooter></CardFooter>
     </ShadcnCard>
   );

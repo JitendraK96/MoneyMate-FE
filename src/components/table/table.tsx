@@ -22,7 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import Input from "@/components/inputs/input";
 import {
   Table,
   TableBody,
@@ -32,15 +32,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export type Payment = {
-  id: string;
-  amount: number;
-  status: "pending" | "processing" | "success" | "failed";
-  email: string;
-};
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DataTable = ({ columns, data }: any) => {
+const DataTable = ({ columns, data, onSearch }: any) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -52,6 +45,9 @@ const DataTable = ({ columns, data }: any) => {
   const table = useReactTable({
     data,
     columns,
+    initialState: {
+      pagination: { pageSize: 8 },
+    },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -59,7 +55,17 @@ const DataTable = ({ columns, data }: any) => {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+    enableColumnPinning: true,
     onRowSelectionChange: setRowSelection,
+    filterFns: {
+      includesString: (row, columnId, value) =>
+        String(row.getValue(columnId))
+          .toLowerCase()
+          .includes(String(value).toLowerCase()),
+    },
+    defaultColumn: {
+      filterFn: "includesString",
+    },
     state: {
       sorting,
       columnFilters,
@@ -71,14 +77,17 @@ const DataTable = ({ columns, data }: any) => {
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+        {onSearch && (
+          <Input
+            placeholder="Search"
+            className="max-w-sm"
+            formInput={false}
+            onChange={(e) => {
+              onSearch(e.target.value);
+            }}
+          />
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -99,16 +108,16 @@ const DataTable = ({ columns, data }: any) => {
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    {column.id.replace(/_/g, " ")}
                   </DropdownMenuCheckboxItem>
                 );
               })}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
+      <div>
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-[var(--table-headerbackground)] [&_tr]:border-0 table-heading">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -126,12 +135,13 @@ const DataTable = ({ columns, data }: any) => {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className="bg-[var(--table-rowbackground)]">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="border-b-[0.5px] border-b-[color:var(--table-rowborder)] table-data"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -156,11 +166,7 @@ const DataTable = ({ columns, data }: any) => {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
+      <div className="flex items-center justify-end space-x-2 pt-8">
         <div className="space-x-2">
           <Button
             variant="outline"

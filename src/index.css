@@ -86,6 +86,14 @@
   --content-border: #dfdfdf;
   --content-background: #ffffff;
   /* content */
+
+  /* table */
+  --table-headerbackground: #f5f5f5;
+  --table-headertext: #202020;
+  --table-rowtext: #3f3f46;
+  --table-rowbackground: #ffffff;
+  --table-rowborder: #dfdfdf;
+  /* table */
 }
 
 .dark {

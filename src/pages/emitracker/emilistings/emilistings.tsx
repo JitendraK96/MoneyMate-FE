@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
@@ -9,12 +9,14 @@ import Card from "@/components/card";
 import { Button } from "@/components/inputs";
 import { CirclePlus } from "lucide-react";
 import DataTable from "@/components/table";
-import { getColumns } from "./columnDefs"; // Assuming you have a columnDefs file
+import { getColumns } from "./columnDefs";
+import { searchFilter } from "@/components/table/utils";
 
 const EmiListing = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useUser();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const emiList = useSelector((state: RootState) => state.emiDetails.emiList);
 
@@ -36,6 +38,10 @@ const EmiListing = () => {
 
     fetchEmiDetails();
   }, [dispatch, user]);
+
+  const handleSearch = (search: string) => {
+    setSearchQuery(search.trim());
+  };
 
   const handleAddNewEmi = () => {
     navigate("/dashboard/emitracker/create");
@@ -70,8 +76,13 @@ const EmiListing = () => {
         }
         cardContent={
           <DataTable
-            data={emiList}
+            data={
+              searchQuery !== ""
+                ? searchFilter({ rows: emiList, term: searchQuery })
+                : emiList
+            }
             columns={getColumns(handleDeleteEmi, handleRowClick)}
+            onSearch={handleSearch}
           />
         }
       />

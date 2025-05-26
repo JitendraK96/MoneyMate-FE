@@ -38,6 +38,7 @@ export const getColumns = (
         ₹{Number(row.getValue("loan_amount")).toLocaleString("en-IN")}
       </div>
     ),
+    enablePinning: true,
   },
   {
     accessorKey: "rate_of_interest",
