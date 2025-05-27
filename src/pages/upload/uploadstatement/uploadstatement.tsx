@@ -177,61 +177,25 @@ const TransactionAnalyzer: React.FC = () => {
     };
 
     const imageType = getImageType(base64Image);
-    const base64Data = base64Image.split(",")[1]; // Remove data URL prefix
-
-    console.log("Image type detected:", imageType);
-    console.log("Base64 prefix:", base64Data.substring(0, 20));
+    const base64Data = base64Image.split(",")[1];
 
     try {
-      // Use proxy path instead of direct API URL
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch(import.meta.env.VITE_ANAYLZE_STATEMENT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
         },
-        body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 4000,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: prompt,
-                },
-                {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: imageType,
-                    data: base64Data,
-                  },
-                },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify({ prompt, imageType, base64Data }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Claude API error: ${errorData.error?.message || response.statusText}`
-        );
-      }
-
       const data = await response.json();
-      const content = data.content[0].text;
+      const {
+        data: { analyzedStatment },
+      } = data;
+      const content = analyzedStatment;
 
-      console.log("Claude raw response:", content);
-
-      // Try to extract JSON from Claude's response
       let parsedData;
       try {
-        // Claude might wrap JSON in markdown code blocks
         const jsonMatch =
           content.match(/```json\s*([\s\S]*?)\s*```/) ||
           content.match(/```\s*([\s\S]*?)\s*```/);
@@ -240,7 +204,6 @@ const TransactionAnalyzer: React.FC = () => {
       } catch (parseError) {
         console.error("JSON Parse Error:", parseError);
         console.error("Raw content:", content);
-        // Try to parse the content directly
         parsedData = JSON.parse(content);
       }
 
