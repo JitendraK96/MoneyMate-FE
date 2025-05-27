@@ -4,6 +4,7 @@ import {
   Search,
   ChevronRight,
   Wallet,
+  Star,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useThemeToggle } from "@/hooks/useThemeToggle";
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/collapsible";
 import MobileLogoDark from "@/assets/images/f-m-logo-dark.svg";
 import MobileLogoLight from "@/assets/images/f-m-logo-light.svg";
+import { useUser } from "@/context/UserContext";
 
 const items = [
   {
@@ -91,6 +93,9 @@ const Sidebar = () => {
   const { theme } = useThemeToggle();
   const location = useLocation();
   const currentPath = location.pathname;
+  const {
+    user: { isPremium },
+  } = useUser();
 
   return (
     <ShadcnSidebar variant="sidebar" collapsible="icon">
@@ -143,27 +148,41 @@ const Sidebar = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <SidebarMenuSub>
-                        {item?.subMenus?.map((menu) => (
-                          <CollapsibleContent key={menu.title}>
-                            <SidebarMenuSubItem>
-                              <SidebarMenuButton
-                                asChild
-                                isActive={
-                                  currentPath.startsWith(menu.url) ||
-                                  (menu.url === "/dashboard/overview" &&
-                                    currentPath === "/dashboard")
-                                }
-                              >
-                                <Link
-                                  to={menu.url}
-                                  className="text-[var(--sidebar-text)] font-size-small"
+                        {item?.subMenus?.map((menu) => {
+                          const isUploadStmt =
+                            menu.url === "/dashboard/uploadstatement";
+                          const disabled = isUploadStmt && !isPremium;
+
+                          return (
+                            <CollapsibleContent key={menu.title}>
+                              <SidebarMenuSubItem>
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={
+                                    currentPath.startsWith(menu.url) ||
+                                    (menu.url === "/dashboard/overview" &&
+                                      currentPath === "/dashboard")
+                                  }
+                                  disabled={disabled}
                                 >
-                                  {menu.title}
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuSubItem>
-                          </CollapsibleContent>
-                        ))}
+                                  {disabled ? (
+                                    <span className="text-[var(--sidebar-text)] font-size-small flex items-center">
+                                      <span>{menu.title}</span>{" "}
+                                      <Star strokeWidth={1.5} />
+                                    </span>
+                                  ) : (
+                                    <Link
+                                      to={menu.url}
+                                      className="text-[var(--sidebar-text)] font-size-small"
+                                    >
+                                      {menu.title}
+                                    </Link>
+                                  )}
+                                </SidebarMenuButton>
+                              </SidebarMenuSubItem>
+                            </CollapsibleContent>
+                          );
+                        })}
                       </SidebarMenuSub>
                     </CollapsibleContent>
                   </SidebarMenuItem>

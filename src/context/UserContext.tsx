@@ -4,6 +4,7 @@ interface User {
   id: string | null;
   email: string | null;
   fullName: string | null;
+  isPremium: boolean;
 }
 
 interface UserContextType {
@@ -21,6 +22,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     id: null,
     email: null,
     fullName: null,
+    isPremium: false,
   });
 
   // Load user from localStorage on app initialization
@@ -37,7 +39,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const clearUser = () => {
-    setUserState({ id: null, email: null, fullName: null });
+    setUserState({ id: null, email: null, fullName: null, isPremium: false });
     localStorage.removeItem("user"); // Clear user from localStorage
   };
 
