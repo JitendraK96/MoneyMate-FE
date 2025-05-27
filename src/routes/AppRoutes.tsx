@@ -5,6 +5,7 @@ import Signin from "@/pages/signin";
 import Signup from "@/pages/signup";
 import EmiDetails from "@/pages/emitracker/emidetails";
 import EmiListing from "@/pages/emitracker/emilistings";
+import Uploadstatement from "@/pages/upload/uploadstatement";
 
 const AppRoutes = () => {
   return (
@@ -27,6 +28,7 @@ const AppRoutes = () => {
         <Route path="emitracker/create" element={<EmiDetails />} />
         <Route path="emitracker/:id" element={<EmiDetails />} />
         <Route path="reminders" element={<>Reminders</>} />
+        <Route path="uploadstatement" element={<Uploadstatement />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/signin" />} />

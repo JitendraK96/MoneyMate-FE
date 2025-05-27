@@ -79,6 +79,10 @@ const items = [
         title: "Reminders",
         url: "/dashboard/reminders",
       },
+      {
+        title: "Upload Statement",
+        url: "/dashboard/uploadstatement",
+      },
     ],
   },
 ];
