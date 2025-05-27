@@ -15,7 +15,17 @@ export default function DashboardLayout() {
 
       if (error || !userData.user) {
         console.error("Error fetching user details:", error?.message);
-        // Optionally, redirect to login if the user is not authenticated
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("full_name, is_premium")
+        .eq("id", userData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError.message);
         return;
       }
 
@@ -23,6 +33,7 @@ export default function DashboardLayout() {
         id: userData.user.id,
         email: userData.user.email || "",
         fullName: userData.user.user_metadata?.full_name || "",
+        isPremium: profile.is_premium,
       });
     };
 
