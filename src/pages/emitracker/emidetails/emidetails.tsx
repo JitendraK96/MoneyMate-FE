@@ -95,6 +95,8 @@ const EmiDetails = () => {
   } = useSelector((state: RootState) => state.emiDetails.form);
   const { user } = useUser();
 
+  const isCreateMode = location.pathname.includes("create");
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -163,7 +165,7 @@ const EmiDetails = () => {
     return <p>Loading...</p>;
   }
 
-  if (!emiDetails && !location.pathname.includes("create")) {
+  if (!emiDetails && !isCreateMode) {
     return <p>No EMI details found.</p>;
   }
 
@@ -313,6 +315,8 @@ const EmiDetails = () => {
     >
       <Card
         title="Details"
+        collapsible={true}
+        defaultOpen={true}
         cardContent={
           <Form {...form}>
             <form>
@@ -412,18 +416,10 @@ const EmiDetails = () => {
           <div className="flex justify-end">
             <Button
               type="button"
-              title={
-                location.pathname.includes("create")
-                  ? "Create EMI"
-                  : "Update EMI"
-              }
+              title={isCreateMode ? "Create EMI" : "Update EMI"}
               variant={"outline"}
               className="max-w-[130px] !bg-[var(--common-brand)]"
-              onClick={
-                location.pathname.includes("create")
-                  ? handleCreate
-                  : handleUpdate
-              }
+              onClick={isCreateMode ? handleCreate : handleUpdate}
             />
           </div>
         }
@@ -431,6 +427,8 @@ const EmiDetails = () => {
 
       <Card
         title="EMI Breakdown"
+        collapsible={true}
+        defaultOpen={true}
         headerContent={
           <div className="text-[var(--content-textprimary)] flex gap-6 text-sm">
             <div className="font-semibold">
