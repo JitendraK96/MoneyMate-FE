@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +8,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Sort from "@/components/sort";
 
 interface EmiRow {
+  name: string;
   id: number;
   loan_amount: number;
   rate_of_interest: number;
@@ -23,6 +25,22 @@ export const getColumns = (
   onView: (id: number) => void
 ): ColumnDef<EmiRow>[] => [
   {
+    accessorKey: "name",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Name
+        <Sort />
+      </Button>
+    ),
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("name")}</div>
+    ),
+    enablePinning: true,
+  },
+  {
     accessorKey: "loan_amount",
     header: ({ column }) => (
       <Button
@@ -30,7 +48,7 @@ export const getColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Loan Amount
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => (
@@ -48,7 +66,7 @@ export const getColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Rate of Interest
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => <div>{row.getValue("rate_of_interest")}%</div>,
@@ -61,7 +79,7 @@ export const getColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Tenure
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => <div>{row.getValue("tenure")} yrs</div>,
@@ -74,7 +92,7 @@ export const getColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Hike Percentage
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => <div>{row.getValue("hike_percentage")}%</div>,
@@ -87,7 +105,7 @@ export const getColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Paid
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => {

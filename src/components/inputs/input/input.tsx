@@ -44,13 +44,35 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    // Handle value vs defaultValue properly
+    // Properly handle field props and custom handlers
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Call field onChange first (for React Hook Form)
+      if (field?.onChange) {
+        field.onChange(e);
+      }
+      // Then call custom onChange if provided
+      if (onChange) {
+        onChange(e);
+      }
+    };
+
+    const handleBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Call field onBlur first (for React Hook Form)
+      if (field?.onBlur) {
+        field.onBlur(e);
+      }
+      // Then call custom onBlur if provided
+      if (onBlur) {
+        onBlur(e);
+      }
+    };
+
     const inputProps = {
       ...field,
       type,
       placeholder: placeholder || "",
-      onChange,
-      onBlur,
+      onChange: handleChange,
+      onBlur: handleBlur,
       onKeyDown,
       min,
       step,
