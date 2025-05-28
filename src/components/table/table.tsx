@@ -76,11 +76,11 @@ const DataTable = ({ columns, data, onSearch }: any) => {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center mb-6">
         {onSearch && (
           <Input
             placeholder="Search"
-            className="max-w-sm"
+            className="max-w-sm border-[var(--table-searchborder)]"
             formInput={false}
             onChange={(e) => {
               onSearch(e.target.value);
@@ -89,12 +89,21 @@ const DataTable = ({ columns, data, onSearch }: any) => {
         )}
 
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+          <DropdownMenuTrigger
+            asChild
+            className="border-[var(--common-inputborder)]"
+          >
+            <Button
+              variant="outline"
+              className="ml-auto text-[var(--content-textprimary)] "
+            >
               Columns <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent
+            align="end"
+            className="bg-[var(--content-background)] border-[var(--common-inputborder)]"
+          >
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())

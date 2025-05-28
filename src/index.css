@@ -93,6 +93,7 @@
   --table-rowtext: #3f3f46;
   --table-rowbackground: #ffffff;
   --table-rowborder: #dfdfdf;
+  --table-searchborder: #dfdfdf;
   /* table */
 }
 
@@ -130,6 +131,23 @@
   --sidebar-hovertext: #ffffff;
   --sidebar-text: #ffffff;
   /* sidebar */
+
+  /* content */
+  --content-textprimary: #ffffff;
+  --content-textsecondary: #ffffff;
+  --content-textplaceholder: #a0a0a0;
+  --content-border: #dfdfdf;
+  --content-background: #1f1f21;
+  /* content */
+
+  /* table */
+  --table-headerbackground: #3f3f46;
+  --table-headertext: #ffffff;
+  --table-rowtext: #ffffff;
+  --table-rowbackground: #1f1f21;
+  --table-rowborder: #4f4f4f;
+  --table-searchborder: #3f3f46;
+  /* table */
 }
 
 @layer base {

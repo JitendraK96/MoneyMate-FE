@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface EmiDetailsState {
   form: {
+    name: string;
     loanAmount: number;
     rateOfInterest: number;
     tenure: number;
@@ -20,6 +21,7 @@ interface EmiDetailsState {
 
 const initialState: EmiDetailsState = {
   form: {
+    name: "",
     loanAmount: 0,
     rateOfInterest: 0,
     tenure: 0,
@@ -33,6 +35,9 @@ export const emiDetailsSlice = createSlice({
   name: "emiDetails",
   initialState,
   reducers: {
+    setName: (state, action: PayloadAction<string>) => {
+      state.form.name = action.payload;
+    },
     setLoanAmount: (state, action: PayloadAction<number>) => {
       state.form.loanAmount = action.payload;
     },
@@ -52,6 +57,7 @@ export const emiDetailsSlice = createSlice({
       state.form.prepayments[action.payload.month] = action.payload.amount;
     },
     resetEmiForm: (state) => {
+      state.form.name = initialState.form.name;
       state.form.loanAmount = initialState.form.loanAmount;
       state.form.rateOfInterest = initialState.form.rateOfInterest;
       state.form.tenure = initialState.form.tenure;
@@ -65,6 +71,7 @@ export const emiDetailsSlice = createSlice({
 });
 
 export const {
+  setName,
   setLoanAmount,
   setRateOfInterest,
   setTenure,
