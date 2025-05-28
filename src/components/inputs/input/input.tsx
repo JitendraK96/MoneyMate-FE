@@ -39,6 +39,7 @@ const Input = ({
               type={type}
               placeholder={placeholder ? placeholder : ""}
               className={`text-[var(--accesscontrol-textplaceholder)] font-size-small border-[0.5px] border-[var(--common-inputborder)] rounded-lg focus-visible:ring-[0.5px] pt-5 pb-5 !bg-[var(--accesscontrol-inputbackground)] ${className}`}
+              onChange={onChange}
             />
           </FormControl>
           <FormMessage className="font-size-extra-small text-[var(--common-error)]" />

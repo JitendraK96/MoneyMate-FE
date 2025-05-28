@@ -11,6 +11,7 @@ import { CirclePlus } from "lucide-react";
 import DataTable from "@/components/table";
 import { getColumns } from "./columnDefs";
 import { searchFilter } from "@/components/table/utils";
+import Page from "@/components/page";
 
 const EmiListing = () => {
   const navigate = useNavigate();
@@ -56,13 +57,10 @@ const EmiListing = () => {
   };
 
   return (
-    <div className="p-5">
-      <h1 className="content-header-title text-[var(--content-textprimary)]">
-        All EMI Listing
-      </h1>
-      <p className="content-header-subtitle text-[var(--content-textsecondary)]">
-        Add all your EMIs here to keep a track with ease
-      </p>
+    <Page
+      title="All EMI Listing"
+      subTitle="Add all your EMIs here to keep a track with ease"
+    >
       <Card
         title="Your EMIs"
         headerContent={
@@ -86,7 +84,7 @@ const EmiListing = () => {
           />
         }
       />
-    </div>
+    </Page>
   );
 };
 

@@ -10,9 +10,15 @@ type CardProps = {
   title: string;
   headerContent?: React.ReactNode;
   cardContent?: React.ReactNode;
+  footerContent?: React.ReactNode;
 };
 
-const Card = ({ title, headerContent, cardContent }: CardProps) => {
+const Card = ({
+  title,
+  headerContent,
+  cardContent,
+  footerContent,
+}: CardProps) => {
   return (
     <ShadcnCard className="bg-[var(--content-background)] border-0 gap-1 mt-5">
       <CardHeader className="flex justify-between items-center">
@@ -21,8 +27,10 @@ const Card = ({ title, headerContent, cardContent }: CardProps) => {
         </CardTitle>
         {headerContent}
       </CardHeader>
-      <CardContent className="overflow-scroll">{cardContent}</CardContent>
-      <CardFooter></CardFooter>
+      <CardContent className="overflow-scroll mt-6 mb-6">
+        {cardContent}
+      </CardContent>
+      <CardFooter>{footerContent}</CardFooter>
     </ShadcnCard>
   );
 };
