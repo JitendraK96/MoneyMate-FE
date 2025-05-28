@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import Sort from "@/components/sort";
 import { Input } from "@/components/inputs";
 import { useCallback, useState, useEffect, useRef } from "react";
 
@@ -132,7 +132,7 @@ export const getEmiTableColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Month
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => <div>{row.getValue("month")}</div>,
@@ -147,7 +147,7 @@ export const getEmiTableColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         EMI
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => (
@@ -163,7 +163,7 @@ export const getEmiTableColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Principal
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => (
@@ -179,7 +179,7 @@ export const getEmiTableColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Interest
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => (
@@ -197,7 +197,7 @@ export const getEmiTableColumns = (
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Outstanding
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <Sort />
       </Button>
     ),
     cell: ({ row }) => {

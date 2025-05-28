@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -22,6 +23,13 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Input from "@/components/inputs/input";
 import {
   Table,
@@ -46,7 +54,7 @@ const DataTable = ({ columns, data, onSearch }: any) => {
     data,
     columns,
     initialState: {
-      pagination: { pageSize: 8 },
+      pagination: { pageSize: 10 }, // Changed default to 10
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -91,18 +99,18 @@ const DataTable = ({ columns, data, onSearch }: any) => {
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            className="border-[var(--common-inputborder)]"
+            className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
           >
             <Button
               variant="outline"
-              className="ml-auto text-[var(--content-textprimary)] "
+              className="ml-auto text-[var(--content-textprimary)] font-size-extra-small !border-[var(--common-inputborder)] focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             >
               Columns <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="bg-[var(--content-background)] border-[var(--common-inputborder)]"
+            className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
           >
             {table
               .getAllColumns()
@@ -111,7 +119,7 @@ const DataTable = ({ columns, data, onSearch }: any) => {
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize"
+                    className="capitalize font-size-extra-small text-[var(--content-textprimary)]"
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) =>
                       column.toggleVisibility(!!value)
@@ -175,24 +183,77 @@ const DataTable = ({ columns, data, onSearch }: any) => {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 pt-8">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+      <div className="flex items-center justify-between space-x-2 pt-8">
+        <div className="flex items-center space-x-2">
+          <p className="font-size-extra-small text-[var(--content-textprimary)]">
+            Rows per page
+          </p>
+          <Select
+            value={`${table.getState().pagination.pageSize}`}
+            onValueChange={(value: any) => {
+              table.setPageSize(Number(value));
+            }}
           >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+            <SelectTrigger className="h-8 w-[70px] border-[var(--common-inputborder)] bg-[var(--content)] focus:outline-none focus:ring-0 focus:border-[var(--common-inputborder)] data-[state=closed]:ring-0 data-[state=open]:ring-0 data-[state=closed]:border-[var(--common-inputborder)] data-[state=open]:border-[var(--common-inputborder)] [&[data-state=closed]]:ring-0 [&[data-state=open]]:ring-0">
+              <SelectValue placeholder={table.getState().pagination.pageSize} />
+            </SelectTrigger>
+            <SelectContent
+              side="top"
+              className="bg-[var(--content)] border-[var(--common-inputborder)] "
+            >
+              {[10, 20, 30, 40, 50].map((pageSize) => (
+                <SelectItem key={pageSize} value={`${pageSize}`}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Page info and navigation */}
+        <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex w-[100px] items-center justify-center font-size-extra-small text-[var(--content-textprimary)]">
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 !bg-[var(--content)] !border-[var(--common-inputborder)]"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Go to first page</span>
+              {"<<"}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 !bg-[var(--content)] !border-[var(--common-inputborder)]"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Go to previous page</span>
+              {"<"}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 !bg-[var(--content)] !border-[var(--common-inputborder)]"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Go to next page</span>
+              {">"}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0 !bg-[var(--content)] !border-[var(--common-inputborder)]"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Go to last page</span>
+              {">>"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
