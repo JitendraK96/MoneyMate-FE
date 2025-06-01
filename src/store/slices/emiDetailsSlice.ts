@@ -22,9 +22,9 @@ interface EmiDetailsState {
 const initialState: EmiDetailsState = {
   form: {
     name: "",
-    loanAmount: 0,
-    rateOfInterest: 0,
-    tenure: 0,
+    loanAmount: 1000,
+    rateOfInterest: 0.1,
+    tenure: 1,
     hikePercentage: 0,
     prepayments: {},
   },

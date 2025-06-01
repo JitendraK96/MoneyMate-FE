@@ -95,6 +95,10 @@
   --table-rowborder: #dfdfdf;
   --table-searchborder: #dfdfdf;
   /* table */
+
+  /* radio */
+  --radio-textprimary: #4f4f4f;
+  /* radio */
 }
 
 .dark {
@@ -106,7 +110,7 @@
   --common-brand: #4461f2;
   --common-white: #ffffff;
   --common-seperator: #cac6d4;
-  --common-inputborder: transparent;
+  --common-inputborder: #3e3e3e;
   --common-backgroundopacity: #000000;
   --common-error: #f87171;
   /* common */
@@ -148,6 +152,10 @@
   --table-rowborder: #4f4f4f;
   --table-searchborder: #3f3f46;
   /* table */
+
+  /* radio */
+  --radio-textprimary: #a0a0a0;
+  /* radio */
 }
 
 @layer base {
@@ -260,3 +268,18 @@ body {
   font-family: "PoppinsLight";
 }
 /* table fonts */
+
+/* form wrapper */
+
+.form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.no-bottom-margin {
+  margin-bottom: 0;
+}
+
+/* form wrapper */

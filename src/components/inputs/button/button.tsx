@@ -17,6 +17,7 @@ interface ButtonProps {
     | undefined;
   icon?: React.ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 const Button = ({
@@ -27,6 +28,7 @@ const Button = ({
   className = "",
   icon,
   onClick,
+  disabled = false,
 }: ButtonProps) => {
   return (
     <ShadButton
@@ -34,6 +36,7 @@ const Button = ({
       onClick={onClick}
       variant={variant}
       className={`bg-[var(--common-brand)] text-[var(--common-white)] pt-[22px] pb-[22px] cursor-pointer rounded-lg font-size-small hover:bg-[var(--common-brand)] hover:text-[var(--common-white)] border-0 w-full ${className}`}
+      disabled={disabled || isLoading}
     >
       {isLoading && <Loader2 className="animate-spin" />}
       {icon}
