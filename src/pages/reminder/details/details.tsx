@@ -1,5 +1,6 @@
 import Page from "@/components/page";
 import Card from "@/components/card";
+import { useReminderDetail } from "@/pages/reminder/hooks/useReminderDetails";
 import { Form, FormField } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,8 +9,19 @@ import { Input, Radio, DatePicker, Button } from "@/components/inputs";
 import Dropdown from "@/components/dropdown";
 import { useWatch } from "react-hook-form";
 import { FormSchema } from "./validationSchema";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
+import { useUser } from "@/context/UserContext";
+import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 
 const Details = () => {
+  const { user } = useUser();
+  const { id } = useParams();
+  const isCreateMode = !id;
+  const [isSaving, setIsSaving] = useState(false);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     mode: "onChange",
@@ -20,8 +32,8 @@ const Details = () => {
       title: "",
       description: "",
       reminderType: "single",
-      recurringType: "weekly",
-      dayOfWeek: "monday",
+      recurringType: "",
+      dayOfWeek: "",
       weeklyExpirationDate: undefined,
       monthlyExpirationDate: undefined,
       reminderDate: undefined,
@@ -29,25 +41,118 @@ const Details = () => {
     },
   });
 
-  const watchedValues = useWatch({
-    control: form.control,
-    name: ["reminderType", "recurringType"],
+  const { data } = useReminderDetail({
+    id: id,
+    userId: user?.id,
   });
 
-  const [reminderType, recurringType] = watchedValues;
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        title: data.title || "",
+        description: data.description || "",
+        reminderType:
+          (data.reminder_type as "single" | "recurring") || "single",
+        recurringType: (data.recurring_type as "weekly" | "monthly") || "",
+        dayOfWeek: dayOfWeek as
+          | "monday"
+          | "tuesday"
+          | "wednesday"
+          | "thursday"
+          | "friday"
+          | "saturday"
+          | "sunday"
+          | "",
+        weeklyExpirationDate: data.weekly_expiration_date
+          ? new Date(data.weekly_expiration_date)
+          : undefined,
+        monthlyExpirationDate: data.monthly_expiration_date
+          ? new Date(data.monthly_expiration_date)
+          : undefined,
+        reminderDate: data.reminder_date
+          ? new Date(data.reminder_date)
+          : undefined,
+        dateOfMonth: data.date_of_month || 1,
+      });
+    }
+  }, [data, form]);
+
+  const watchedValues = useWatch({
+    control: form.control,
+    name: [
+      "reminderType",
+      "recurringType",
+      "title",
+      "description",
+      "dayOfWeek",
+      "weeklyExpirationDate",
+      "monthlyExpirationDate",
+      "reminderDate",
+      "dateOfMonth",
+    ],
+  });
+
+  const [
+    reminderType,
+    recurringType,
+    title,
+    description,
+    dayOfWeek,
+    weeklyExpirationDate,
+    monthlyExpirationDate,
+    reminderDate,
+    dateOfMonth,
+  ] = watchedValues;
 
   const {
-    formState: { isValid, isDirty, errors },
+    formState: { isValid, isDirty },
   } = form;
 
-  console.log(
-    isValid,
-    !isValid,
-    !isDirty,
-    "OKOKOK",
-    !isValid || !isDirty,
-    errors
-  );
+  const handleUpdate = async () => {
+    setIsSaving(true);
+    const { error } = await supabase
+      .from("reminders")
+      .update({})
+      .eq("user_id", user.id)
+      .eq("id", id);
+    setIsSaving(false);
+
+    if (error) {
+      toast.error("Failed to update Reminder details. Please try again.");
+      return;
+    }
+
+    toast.success("Reminder details updated successfully!");
+  };
+
+  const handleCreate = async () => {
+    setIsSaving(true);
+    const { error } = await supabase.from("reminders").insert([
+      {
+        user_id: user.id,
+        title: title,
+        description: description,
+        reminder_type: reminderType,
+        reminder_date: reminderType === "single" ? reminderDate : null,
+        recurring_type: recurringType || null,
+        day_of_week: reminderType === "recurring" ? dayOfWeek : null,
+        weekly_expiration_date:
+          reminderType === "recurring" ? weeklyExpirationDate : null,
+        monthly_expiration_date:
+          reminderType === "recurring" ? monthlyExpirationDate : null,
+        date_of_month: reminderType === "recurring" ? dateOfMonth : null,
+      },
+    ]);
+    setIsSaving(false);
+
+    if (error) {
+      toast.error("Failed to save Reminder details. Please try again.");
+      return;
+    }
+
+    toast.success("Reminder details saved successfully!");
+  };
+
   return (
     <Page title="Reminder" subTitle="View and edit reminder details">
       <Card
@@ -55,7 +160,7 @@ const Details = () => {
         cardContent={
           <Form {...form}>
             <form>
-              <div className="form-wrapper">
+              <div className="form-wrapper two-column">
                 <FormField
                   control={form.control}
                   name="title"
@@ -79,7 +184,7 @@ const Details = () => {
                   )}
                 />
               </div>
-              <div className="form-wrapper">
+              <div className="form-wrapper two-column">
                 <FormField
                   control={form.control}
                   name="description"
@@ -311,9 +416,11 @@ const Details = () => {
             <Button
               disabled={!isValid || !isDirty}
               type="button"
-              title={"Create Now"}
+              title={isCreateMode ? "Create Reminder" : "Update Reminder"}
               variant={"outline"}
               className="!bg-[var(--common-brand)]"
+              onClick={isCreateMode ? handleCreate : handleUpdate}
+              isLoading={isSaving}
             />
           </div>
         }

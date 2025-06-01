@@ -15,9 +15,7 @@ const FormSchema = z
       .max(200, { message: "Description must not exceed 200 characters." })
       .optional()
       .or(z.literal("")), // Allow empty strings
-    reminderDate: z.date({
-      required_error: "Please select a reminder date.",
-    }),
+    reminderDate: z.date().optional(), // Made optional since it's only required for single reminders
     reminderType: z.enum(["single", "recurring"], {
       required_error: "Please select a reminder type.",
     }),
@@ -25,7 +23,8 @@ const FormSchema = z
       .enum(["weekly", "monthly"], {
         required_error: "Please select a recurring type.",
       })
-      .optional(),
+      .optional()
+      .or(z.literal("")),
     dayOfWeek: z
       .enum([
         "monday",
@@ -36,7 +35,8 @@ const FormSchema = z
         "saturday",
         "sunday",
       ])
-      .optional(),
+      .optional()
+      .or(z.literal("")),
     weeklyExpirationDate: z.date().optional(),
     monthlyExpirationDate: z.date().optional(),
     dateOfMonth: z
@@ -49,6 +49,18 @@ const FormSchema = z
       .optional(),
   })
   .superRefine((data, ctx) => {
+    // Single reminder validation
+    if (data.reminderType === "single") {
+      // reminderDate is required for single reminders
+      if (!data.reminderDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select a reminder date.",
+          path: ["reminderDate"],
+        });
+      }
+    }
+
     // Conditional validation for recurring reminders
     if (data.reminderType === "recurring") {
       // recurringType is required when reminderType is recurring

@@ -7,6 +7,7 @@ import EmiListing from "@/pages/emitracker/emilistings";
 import Uploadstatement from "@/pages/upload/uploadstatement";
 import EMIDetails from "@/pages/emitracker/details";
 import ReminderDetails from "@/pages/reminder/details";
+import ReminderListing from "@/pages/reminder/listings";
 
 const AppRoutes = () => {
   return (
@@ -28,7 +29,9 @@ const AppRoutes = () => {
         <Route path="emitracker" element={<EmiListing />} />
         <Route path="emitracker/create" element={<EMIDetails />} />
         <Route path="emitracker/:id" element={<EMIDetails />} />
+        <Route path="reminders" element={<ReminderListing />} />
         <Route path="reminders/create" element={<ReminderDetails />} />
+        <Route path="reminders/:id" element={<ReminderDetails />} />
         <Route path="uploadstatement" element={<Uploadstatement />} />
       </Route>
 

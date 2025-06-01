@@ -282,4 +282,8 @@ body {
   margin-bottom: 0;
 }
 
+.two-column {
+  grid-template-columns: 1fr 1fr;
+}
+
 /* form wrapper */

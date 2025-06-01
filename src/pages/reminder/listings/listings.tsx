@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { RootState } from "@/store";
-import { setEmiList } from "@/store/slices/emiDetailsSlice";
+import { setList } from "@/store/slices/reminderSlice";
 import { useUser } from "@/context/UserContext";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
@@ -19,22 +19,22 @@ const EmiListing = () => {
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const emiList = useSelector((state: RootState) => state.emiDetails.emiList);
+  const reminder = useSelector((state: RootState) => state.reminder.list);
 
   useEffect(() => {
     const fetchEmiDetails = async () => {
       const { data, error } = await supabase
-        .from("emi_details")
+        .from("reminders")
         .select("*")
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error fetching EMI details:", error.message);
+        console.error("Error fetching Reminder details:", error.message);
         alert("Failed to fetch EMI details. Please try again.");
         return;
       }
 
-      dispatch(setEmiList(data || []));
+      dispatch(setList(data || []));
     };
 
     fetchEmiDetails();
@@ -45,28 +45,29 @@ const EmiListing = () => {
   };
 
   const handleAddNewEmi = () => {
-    navigate("/dashboard/emitracker/create");
+    navigate("/dashboard/reminders/create");
   };
 
   const handleRowClick = (id: number) => {
-    navigate(`/dashboard/emitracker/${id}`);
+    navigate(`/dashboard/reminders/${id}`);
   };
 
   const handleDeleteEmi = (id: number) => {
-    console.log("Delete EMI with ID:", id);
+    console.log("Delete Reminder with ID:", id);
   };
 
+  console.log(reminder, "reminder");
   return (
     <Page
-      title="All EMI Listing"
-      subTitle="Add all your EMIs here to keep a track with ease"
+      title="All Reminder Listing"
+      subTitle="Add all your Reminders here to keep a track with ease"
     >
       <Card
-        title="Your EMIs"
+        title="Your Reminders"
         headerContent={
           <Button
             type="button"
-            title="Add New EMI"
+            title="Add New Reminder"
             className="w-fit"
             onClick={handleAddNewEmi}
             icon={<CirclePlus />}
@@ -76,8 +77,8 @@ const EmiListing = () => {
           <DataTable
             data={
               searchQuery !== ""
-                ? searchFilter({ rows: emiList, term: searchQuery })
-                : emiList
+                ? searchFilter({ rows: reminder, term: searchQuery })
+                : reminder
             }
             columns={getColumns(handleDeleteEmi, handleRowClick)}
             onSearch={handleSearch}

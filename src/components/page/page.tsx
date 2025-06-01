@@ -10,7 +10,7 @@ const Page = ({
   children?: ReactNode;
 }) => {
   return (
-    <div className="p-4">
+    <div className="pt-5 pr-4 pb-5 pl-4">
       <h1 className="content-header-title text-[var(--content-textprimary)]">
         {title}
       </h1>
