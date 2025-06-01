@@ -120,18 +120,33 @@ export const getColumns = (
       const rowData = row.original;
       return (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+          <DropdownMenuTrigger
+            asChild
+            className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
+          >
+            <Button
+              variant="ghost"
+              className="ml-auto text-[var(--content-textprimary)] font-size-extra-small !border-[var(--common-inputborder)] focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            >
               <span className="sr-only">Open menu</span>
               <MoreHorizontal />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onView?.(rowData.id)}>
+          <DropdownMenuContent
+            align="end"
+            className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
+          >
+            <DropdownMenuItem
+              onClick={() => onView?.(rowData.id)}
+              className="text-[var(--content-textprimary)] font-size-extra-small "
+            >
               View
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onDelete(rowData.id)}>
+            <DropdownMenuItem
+              onClick={() => onDelete(rowData.id)}
+              className="text-[var(--content-textprimary)] font-size-extra-small "
+            >
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -79,7 +79,7 @@ const items = [
     subMenus: [
       {
         title: "Reminders",
-        url: "/dashboard/reminders",
+        url: "/dashboard/reminders/create",
       },
       {
         title: "Upload Statement",

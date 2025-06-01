@@ -3,9 +3,10 @@ import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../pages/dashboard";
 import Signin from "@/pages/signin";
 import Signup from "@/pages/signup";
-import EmiDetails from "@/pages/emitracker/emidetails";
 import EmiListing from "@/pages/emitracker/emilistings";
 import Uploadstatement from "@/pages/upload/uploadstatement";
+import EMIDetails from "@/pages/emitracker/details";
+import ReminderDetails from "@/pages/reminder/details";
 
 const AppRoutes = () => {
   return (
@@ -25,9 +26,9 @@ const AppRoutes = () => {
         <Route path="overview" element={<>Overview</>} />
         <Route path="goals" element={<>Goals</>} />
         <Route path="emitracker" element={<EmiListing />} />
-        <Route path="emitracker/create" element={<EmiDetails />} />
-        <Route path="emitracker/:id" element={<EmiDetails />} />
-        <Route path="reminders" element={<>Reminders</>} />
+        <Route path="emitracker/create" element={<EMIDetails />} />
+        <Route path="emitracker/:id" element={<EMIDetails />} />
+        <Route path="reminders/create" element={<ReminderDetails />} />
         <Route path="uploadstatement" element={<Uploadstatement />} />
       </Route>
 
