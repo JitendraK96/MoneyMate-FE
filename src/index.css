@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --breakpoint-lg: 900px;
+  --breakpoint-lg: 1050px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -278,12 +278,24 @@ body {
   margin-bottom: 1.75rem;
 }
 
+@media (max-width: 1050px) {
+  .form-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
 .no-bottom-margin {
   margin-bottom: 0;
 }
 
 .two-column {
   grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 1050px) {
+  .two-column {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* form wrapper */
