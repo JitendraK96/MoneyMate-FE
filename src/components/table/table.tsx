@@ -84,7 +84,7 @@ const DataTable = ({ columns, data, onSearch }: any) => {
 
   return (
     <div className="w-full">
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-6 gap-5 lg:gap-0">
         {onSearch && (
           <Input
             placeholder="Search"
