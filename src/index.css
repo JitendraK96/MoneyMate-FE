@@ -47,6 +47,7 @@
 :root {
   --radius: 8px;
   --content: #f3f6fe;
+  --content-reverse: #2b2b2b;
 
   /* common */
   --common-link: #2c67f3;
@@ -56,6 +57,7 @@
   --common-inputborder: #d9d9d9;
   --common-backgroundopacity: #000000;
   --common-error: #f87171;
+  --common-formbackground: #effafe;
   /* common */
 
   /* accesscontrol */
@@ -104,6 +106,7 @@
 .dark {
   --radius: 8px;
   --content: #2b2b2b;
+  --content-reverse: #f3f6fe;
 
   /* common */
   --common-link: #2c67f3;
@@ -113,6 +116,7 @@
   --common-inputborder: #3e3e3e;
   --common-backgroundopacity: #000000;
   --common-error: #f87171;
+  --common-formbackground: #effafe;
   /* common */
 
   /* accesscontrol */
@@ -275,6 +279,10 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.extra-bottom-margin {
   margin-bottom: 1.75rem;
 }
 

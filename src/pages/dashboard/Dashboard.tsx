@@ -42,14 +42,17 @@ export default function DashboardLayout() {
 
   return (
     <SidebarProvider className="bg-[var(--content)]">
-      <div className="flex min-h-screen w-full">
+      <div className="flex h-screen w-full overflow-hidden">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main Content Area */}
-        <div className="flex-1 relative min-w-0">
+        <div className="relative flex-1 flex flex-col min-w-0 overflow-hidden">
           <Header />
-          <Outlet />
+          {/* <Outlet /> */}
+          <div className="flex-1 overflow-y-auto">
+            <Outlet />
+          </div>
         </div>
       </div>
     </SidebarProvider>

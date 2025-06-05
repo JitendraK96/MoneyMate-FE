@@ -18,6 +18,7 @@ interface DatePickerProps {
   placeholder?: string;
   disabled?: (date: Date) => boolean;
   onChange?: (value: Date | undefined) => void;
+  required?: boolean;
 }
 
 const DatePicker = ({
@@ -26,6 +27,7 @@ const DatePicker = ({
   placeholder = "Pick a date",
   disabled,
   onChange,
+  required = false,
 }: DatePickerProps) => {
   const defaultDisabled = (date: Date) =>
     date < new Date(new Date().setHours(0, 0, 0, 0));
@@ -42,7 +44,10 @@ const DatePicker = ({
 
   return (
     <FormItem>
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {required && <span className="text-[var(--common-error)] ml-1">*</span>}
+      </Label>
       <Popover>
         <PopoverTrigger asChild>
           <FormControl>
