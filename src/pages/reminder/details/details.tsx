@@ -13,14 +13,16 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useUser } from "@/context/UserContext";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import Toggle from "@/components/toggle";
 
 const Details = () => {
   const { user } = useUser();
   const { id } = useParams();
   const isCreateMode = !id;
   const [isSaving, setIsSaving] = useState(false);
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -32,12 +34,13 @@ const Details = () => {
       title: "",
       description: "",
       reminderType: "single",
-      recurringType: "",
+      recurringType: "weekly",
       dayOfWeek: "",
       weeklyExpirationDate: undefined,
       monthlyExpirationDate: undefined,
       reminderDate: undefined,
-      dateOfMonth: 1,
+      dateOfMonth: null,
+      isLastDayOfMonth: false,
     },
   });
 
@@ -54,7 +57,7 @@ const Details = () => {
         reminderType:
           (data.reminder_type as "single" | "recurring") || "single",
         recurringType: (data.recurring_type as "weekly" | "monthly") || "",
-        dayOfWeek: dayOfWeek as
+        dayOfWeek: data.day_of_week as
           | "monday"
           | "tuesday"
           | "wednesday"
@@ -89,6 +92,7 @@ const Details = () => {
       "monthlyExpirationDate",
       "reminderDate",
       "dateOfMonth",
+      "isLastDayOfMonth",
     ],
   });
 
@@ -102,6 +106,7 @@ const Details = () => {
     monthlyExpirationDate,
     reminderDate,
     dateOfMonth,
+    isLastDayOfMonth,
   ] = watchedValues;
 
   const {
@@ -112,7 +117,19 @@ const Details = () => {
     setIsSaving(true);
     const { error } = await supabase
       .from("reminders")
-      .update({})
+      .update({
+        title: title,
+        description: description,
+        reminder_type: reminderType,
+        reminder_date: reminderType === "single" ? reminderDate : null,
+        recurring_type: recurringType || null,
+        day_of_week: reminderType === "recurring" ? dayOfWeek : null,
+        weekly_expiration_date:
+          reminderType === "recurring" ? weeklyExpirationDate : null,
+        monthly_expiration_date:
+          reminderType === "recurring" ? monthlyExpirationDate : null,
+        date_of_month: reminderType === "recurring" ? dateOfMonth : null,
+      })
       .eq("user_id", user.id)
       .eq("id", id);
     setIsSaving(false);
@@ -123,6 +140,7 @@ const Details = () => {
     }
 
     toast.success("Reminder details updated successfully!");
+    navigate("/dashboard/reminders");
   };
 
   const handleCreate = async () => {
@@ -151,6 +169,7 @@ const Details = () => {
     }
 
     toast.success("Reminder details saved successfully!");
+    navigate("/dashboard/reminders");
   };
 
   return (
@@ -194,8 +213,7 @@ const Details = () => {
                       type="textarea"
                       placeholder="Description"
                       label="Description"
-                      required
-                      rows={8}
+                      rows={6}
                       onChange={(e) => {
                         const value = e.target.value;
                         const numValue = value === "" ? "" : value;
@@ -209,7 +227,7 @@ const Details = () => {
                   )}
                 />
               </div>
-              <div className="form-wrapper">
+              <div className="form-wrapper extra-bottom-margin">
                 <FormField
                   control={form.control}
                   name="reminderType"
@@ -222,6 +240,7 @@ const Details = () => {
                       ]}
                       value={field.value}
                       className="mt-5"
+                      required
                       onValueChange={(value) => {
                         form.setValue(
                           "reminderType",
@@ -236,34 +255,6 @@ const Details = () => {
                     />
                   )}
                 />
-                {reminderType === "recurring" && (
-                  <FormField
-                    control={form.control}
-                    name="recurringType"
-                    render={({ field }) => (
-                      <Radio
-                        label="Recurring Type"
-                        options={[
-                          { value: "weekly", label: "Weekly" },
-                          { value: "monthly", label: "Monthly" },
-                        ]}
-                        value={field.value}
-                        className="mt-5"
-                        onValueChange={(value) => {
-                          form.setValue(
-                            "recurringType",
-                            value as "weekly" | "monthly",
-                            {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                              shouldTouch: true,
-                            }
-                          );
-                        }}
-                      />
-                    )}
-                  />
-                )}
               </div>
               {reminderType === "single" && (
                 <div className="form-wrapper no-bottom-margin">
@@ -275,6 +266,7 @@ const Details = () => {
                         field={field}
                         label="Reminder Date"
                         placeholder="Pick a reminder date"
+                        required
                         onChange={(selectedDate) => {
                           form.setValue(
                             "reminderDate",
@@ -293,7 +285,36 @@ const Details = () => {
               )}
 
               {reminderType === "recurring" && (
-                <>
+                <div>
+                  <div className="form-wrapper extra-bottom-margin">
+                    <FormField
+                      control={form.control}
+                      name="recurringType"
+                      render={({ field }) => (
+                        <Radio
+                          label="Recurring Type"
+                          options={[
+                            { value: "weekly", label: "Weekly" },
+                            { value: "monthly", label: "Monthly" },
+                          ]}
+                          required
+                          value={field.value}
+                          className="mt-5"
+                          onValueChange={(value) => {
+                            form.setValue(
+                              "recurringType",
+                              value as "weekly" | "monthly",
+                              {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              }
+                            );
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
                   {recurringType === "weekly" && (
                     <div className="form-wrapper no-bottom-margin">
                       <FormField
@@ -343,6 +364,7 @@ const Details = () => {
                             field={field}
                             label="Expiry Date"
                             placeholder="Pick an expiry date"
+                            required
                             onChange={(selectedDate) => {
                               form.setValue(
                                 "weeklyExpirationDate",
@@ -360,53 +382,80 @@ const Details = () => {
                     </div>
                   )}
                   {recurringType === "monthly" && (
-                    <div className="form-wrapper no-bottom-margin">
-                      <FormField
-                        control={form.control}
-                        name="dateOfMonth"
-                        render={({ field }) => (
-                          <Input
-                            field={field}
-                            type="number"
-                            placeholder="1"
-                            label="Date of Month"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const numValue = value === "" ? 1 : Number(value);
-                              form.setValue("dateOfMonth", numValue, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                                shouldTouch: true,
-                              });
-                            }}
-                          />
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="monthlyExpirationDate"
-                        render={({ field }) => (
-                          <DatePicker
-                            field={field}
-                            label="Expiry Date"
-                            placeholder="Pick an expiry date"
-                            onChange={(selectedDate) => {
-                              form.setValue(
-                                "monthlyExpirationDate",
-                                selectedDate || new Date(),
-                                {
+                    <>
+                      <div className="form-wrapper">
+                        <FormField
+                          control={form.control}
+                          name="dateOfMonth"
+                          render={({ field }) => (
+                            <Input
+                              field={field}
+                              type="number"
+                              label="Date of Month"
+                              required
+                              placeholder={
+                                isLastDayOfMonth ? "Last Day of month" : "1"
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const numValue =
+                                  value === "" ? 1 : Number(value);
+                                form.setValue("dateOfMonth", numValue, {
                                   shouldValidate: true,
                                   shouldDirty: true,
                                   shouldTouch: true,
-                                }
-                              );
-                            }}
-                          />
-                        )}
-                      />
-                    </div>
+                                });
+                              }}
+                            />
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="isLastDayOfMonth"
+                          render={() => (
+                            <Toggle
+                              label="Last Date of Month"
+                              required
+                              checked={isLastDayOfMonth || false}
+                              onCheckedChange={(checked) => {
+                                form.setValue("isLastDayOfMonth", checked, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                });
+                              }}
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="form-wrapper no-bottom-margin">
+                        <FormField
+                          control={form.control}
+                          name="monthlyExpirationDate"
+                          render={({ field }) => (
+                            <DatePicker
+                              field={field}
+                              label="Expiry Date"
+                              required
+                              placeholder="Pick an expiry date"
+                              onChange={(selectedDate) => {
+                                form.setValue(
+                                  "monthlyExpirationDate",
+                                  selectedDate || new Date(),
+                                  {
+                                    shouldValidate: true,
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                  }
+                                );
+                              }}
+                            />
+                          )}
+                        />
+                      </div>
+                    </>
                   )}
-                </>
+                </div>
               )}
             </form>
           </Form>

@@ -17,6 +17,7 @@ interface GenericRadioGroupProps {
   className?: string;
   disabled?: boolean;
   label: string;
+  required?: boolean;
 }
 
 export default function GenericRadioGroup({
@@ -28,10 +29,14 @@ export default function GenericRadioGroup({
   className,
   disabled = false,
   label,
+  required = false,
 }: GenericRadioGroupProps) {
   return (
     <div>
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {required && <span className="text-[var(--common-error)] ml-1">*</span>}
+      </Label>
       <RadioGroup
         defaultValue={defaultValue}
         value={value}

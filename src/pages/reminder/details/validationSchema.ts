@@ -15,30 +15,36 @@ const FormSchema = z
       .max(200, { message: "Description must not exceed 200 characters." })
       .optional()
       .or(z.literal("")), // Allow empty strings
-    reminderDate: z.date().optional(), // Made optional since it's only required for single reminders
+
+    reminderDate: z.date().optional(), // Only required when reminderType === "single"
     reminderType: z.enum(["single", "recurring"], {
       required_error: "Please select a reminder type.",
     }),
+
     recurringType: z
       .enum(["weekly", "monthly"], {
         required_error: "Please select a recurring type.",
       })
       .optional()
       .or(z.literal("")),
+
     dayOfWeek: z
-      .enum([
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-      ])
+      .enum(
+        [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ],
+        { required_error: "Please select a day of week." }
+      )
       .optional()
       .or(z.literal("")),
     weeklyExpirationDate: z.date().optional(),
-    monthlyExpirationDate: z.date().optional(),
+
     dateOfMonth: z
       .number({
         invalid_type_error: "Date of Month must be a number.",
@@ -46,12 +52,19 @@ const FormSchema = z
       .int({ message: "Date of Month must be a whole number." })
       .min(1, { message: "Date of Month must be at least 1." })
       .max(31, { message: "Date of Month cannot exceed 31." })
-      .optional(),
+      .optional()
+      .nullable(), // Allow null when isLastDayOfMonth is true
+
+    // NEW: boolean flag for "Last Day of Month" option
+    isLastDayOfMonth: z.boolean().optional(),
+
+    monthlyExpirationDate: z.date().optional(),
   })
   .superRefine((data, ctx) => {
-    // Single reminder validation
+    //
+    // 1) Single-reminder validation
+    //
     if (data.reminderType === "single") {
-      // reminderDate is required for single reminders
       if (!data.reminderDate) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -61,9 +74,11 @@ const FormSchema = z
       }
     }
 
-    // Conditional validation for recurring reminders
+    //
+    // 2) Recurring-reminder validation
+    //
     if (data.reminderType === "recurring") {
-      // recurringType is required when reminderType is recurring
+      // 2a) recurringType is required
       if (!data.recurringType) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -72,7 +87,9 @@ const FormSchema = z
         });
       }
 
-      // Weekly recurring validation
+      //
+      // 2b) Weekly recurring fields
+      //
       if (data.recurringType === "weekly") {
         if (!data.dayOfWeek) {
           ctx.addIssue({
@@ -81,7 +98,6 @@ const FormSchema = z
             path: ["dayOfWeek"],
           });
         }
-
         if (!data.weeklyExpirationDate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -92,17 +108,34 @@ const FormSchema = z
         }
       }
 
-      // Monthly recurring validation
+      //
+      // 2c) Monthly recurring fields
+      //
       if (data.recurringType === "monthly") {
-        if (!data.dateOfMonth) {
+        // Must supply either dateOfMonth OR isLastDayOfMonth
+        const hasDateOfMonth = typeof data.dateOfMonth === "number";
+        const hasLastDayFlag = data.isLastDayOfMonth === true;
+
+        if (!hasDateOfMonth && !hasLastDayFlag) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message:
-              "Date of month is required for monthly recurring reminders.",
-            path: ["dateOfMonth"],
+              "Either 'Date of Month' or 'Last Day of Month' must be selected for monthly reminders.",
+            path: ["dateOfMonth"], // can attach to either field; here it's on dateOfMonth
           });
         }
 
+        // If dateOfMonth is provided AND isLastDayOfMonth is also true → ambiguous
+        if (hasDateOfMonth && hasLastDayFlag) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Cannot specify both a day-of-month and 'Last Day of Month'. Choose one.",
+            path: ["dateOfMonth"], // attach warning to dateOfMonth; optionally could also reference isLastDayOfMonth
+          });
+        }
+
+        // monthlyExpirationDate is required always for monthly recurring
         if (!data.monthlyExpirationDate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
