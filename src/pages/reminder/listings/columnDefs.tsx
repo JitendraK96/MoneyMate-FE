@@ -35,6 +35,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Title
         <Sort />
@@ -50,6 +51,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Description
         <Sort />
@@ -65,6 +67,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Type
         <Sort />
@@ -78,6 +81,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Schedule
         <Sort />
@@ -142,6 +146,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Next Occurrence
         <Sort />
@@ -254,6 +259,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Expiry Date
         <Sort />

@@ -29,9 +29,6 @@ const DatePicker = ({
   onChange,
   required = false,
 }: DatePickerProps) => {
-  const defaultDisabled = (date: Date) =>
-    date < new Date(new Date().setHours(0, 0, 0, 0));
-
   const handleDateSelect = (date: Date | undefined) => {
     // Update the form field
     field.onChange(date);
@@ -74,7 +71,7 @@ const DatePicker = ({
             mode="single"
             selected={field.value}
             onSelect={handleDateSelect}
-            disabled={disabled || defaultDisabled}
+            disabled={disabled}
             initialFocus
             className="text-[var(--content-textprimary)]"
           />

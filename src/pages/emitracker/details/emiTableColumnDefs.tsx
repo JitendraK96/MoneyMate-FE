@@ -130,6 +130,7 @@ export const getEmiTableColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Month
         <Sort />
@@ -145,6 +146,7 @@ export const getEmiTableColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         EMI
         <Sort />
@@ -161,6 +163,7 @@ export const getEmiTableColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Principal
         <Sort />
@@ -177,6 +180,7 @@ export const getEmiTableColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Interest
         <Sort />
@@ -195,6 +199,7 @@ export const getEmiTableColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Outstanding
         <Sort />
