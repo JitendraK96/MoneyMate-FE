@@ -70,6 +70,10 @@ const items = [
         title: "EMI Tracker",
         url: "/dashboard/emitracker",
       },
+      {
+        title: "Borrowing",
+        url: "/dashboard/borrowing/create",
+      },
     ],
   },
   {

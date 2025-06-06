@@ -8,6 +8,7 @@ import Uploadstatement from "@/pages/upload/uploadstatement";
 import EMIDetails from "@/pages/emitracker/details";
 import ReminderDetails from "@/pages/reminder/details";
 import ReminderListing from "@/pages/reminder/listings";
+import BorrowingDetails from "@/pages/borrowing/details";
 
 const AppRoutes = () => {
   return (
@@ -33,6 +34,7 @@ const AppRoutes = () => {
         <Route path="reminders/create" element={<ReminderDetails />} />
         <Route path="reminders/:id" element={<ReminderDetails />} />
         <Route path="uploadstatement" element={<Uploadstatement />} />
+        <Route path="borrowing/create" element={<BorrowingDetails />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/signin" />} />

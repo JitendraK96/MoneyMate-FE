@@ -30,6 +30,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Name
         <Sort />
@@ -46,6 +47,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Loan Amount
         <Sort />
@@ -64,6 +66,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Rate of Interest
         <Sort />
@@ -77,6 +80,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Tenure
         <Sort />
@@ -90,6 +94,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Hike Percentage
         <Sort />
@@ -103,6 +108,7 @@ export const getColumns = (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
       >
         Paid
         <Sort />
