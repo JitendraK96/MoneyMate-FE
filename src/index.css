@@ -279,10 +279,6 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 1.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.extra-bottom-margin {
   margin-bottom: 1.75rem;
 }
 

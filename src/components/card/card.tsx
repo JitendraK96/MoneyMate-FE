@@ -49,9 +49,7 @@ const Card = ({
           </CardTitle>
           {headerContent}
         </CardHeader>
-        <CardContent className="overflow-scroll mt-6 mb-1">
-          {cardContent}
-        </CardContent>
+        <CardContent className="mt-6 mb-6">{cardContent}</CardContent>
         <CardFooter>{footerContent}</CardFooter>
       </ShadcnCard>
     );

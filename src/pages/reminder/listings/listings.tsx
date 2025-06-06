@@ -56,7 +56,6 @@ const EmiListing = () => {
     console.log("Delete Reminder with ID:", id);
   };
 
-  console.log(reminder, "reminder");
   return (
     <Page
       title="All Reminder Listing"

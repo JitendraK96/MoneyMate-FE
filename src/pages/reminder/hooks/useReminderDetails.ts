@@ -13,6 +13,7 @@ interface ReminderDetail {
   day_of_week?: string;
   weekly_expiration_date?: string;
   monthly_expiration_date?: string;
+  is_last_day_of_month?: boolean;
 }
 
 interface UseReminderDetailsReturn {

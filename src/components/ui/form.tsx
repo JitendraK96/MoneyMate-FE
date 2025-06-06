@@ -73,9 +73,6 @@ const FormItemContext = React.createContext<FormItemContextValue>(
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   const id = React.useId();
-  const { error } = useFormField();
-
-  console.log(error, " error");
   return (
     <FormItemContext.Provider value={{ id }}>
       <div
@@ -145,7 +142,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
       data-slot="form-message"
       id={formMessageId}
       className={cn(
-        "text-[var(--common-error)] font-size-extra-small", //absolute bottom-[-20px]
+        "text-[var(--common-error)] font-size-extra-small absolute bottom-[-20px]",
         body ? "visible" : "invisible",
         className
       )}

@@ -76,6 +76,7 @@ const Details = () => {
           ? new Date(data.reminder_date)
           : undefined,
         dateOfMonth: data.date_of_month || 1,
+        isLastDayOfMonth: data.is_last_day_of_month || false,
       });
     }
   }, [data, form]);
@@ -110,7 +111,7 @@ const Details = () => {
   ] = watchedValues;
 
   const {
-    formState: { isValid, isDirty },
+    formState: { isValid, isDirty, errors },
   } = form;
 
   const handleUpdate = async () => {
@@ -129,6 +130,7 @@ const Details = () => {
         monthly_expiration_date:
           reminderType === "recurring" ? monthlyExpirationDate : null,
         date_of_month: reminderType === "recurring" ? dateOfMonth : null,
+        is_last_day_of_month: isLastDayOfMonth,
       })
       .eq("user_id", user.id)
       .eq("id", id);
@@ -159,6 +161,7 @@ const Details = () => {
         monthly_expiration_date:
           reminderType === "recurring" ? monthlyExpirationDate : null,
         date_of_month: reminderType === "recurring" ? dateOfMonth : null,
+        is_last_day_of_month: isLastDayOfMonth,
       },
     ]);
     setIsSaving(false);
@@ -172,6 +175,7 @@ const Details = () => {
     navigate("/dashboard/reminders");
   };
 
+  console.log(errors, "errors", isValid, isDirty);
   return (
     <Page title="Reminder" subTitle="View and edit reminder details">
       <Card
@@ -183,24 +187,26 @@ const Details = () => {
                 <FormField
                   control={form.control}
                   name="title"
-                  render={({ field }) => (
-                    <Input
-                      field={field}
-                      type="text"
-                      placeholder="Title"
-                      label="Title"
-                      required
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numValue = value === "" ? "" : value;
-                        form.setValue("title", numValue, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    />
-                  )}
+                  render={({ field }) => {
+                    return (
+                      <Input
+                        field={field}
+                        type="text"
+                        placeholder="Title"
+                        label="Title"
+                        required
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const numValue = value === "" ? "" : value;
+                          form.setValue("title", numValue, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
+                        }}
+                      />
+                    );
+                  }}
                 />
               </div>
               <div className="form-wrapper two-column">
@@ -227,7 +233,7 @@ const Details = () => {
                   )}
                 />
               </div>
-              <div className="form-wrapper extra-bottom-margin">
+              <div className="form-wrapper">
                 <FormField
                   control={form.control}
                   name="reminderType"
@@ -286,7 +292,7 @@ const Details = () => {
 
               {reminderType === "recurring" && (
                 <div>
-                  <div className="form-wrapper extra-bottom-margin">
+                  <div className="form-wrapper">
                     <FormField
                       control={form.control}
                       name="recurringType"
@@ -423,6 +429,13 @@ const Details = () => {
                                   shouldDirty: true,
                                   shouldTouch: true,
                                 });
+                                if (checked) {
+                                  form.setValue("dateOfMonth", null, {
+                                    shouldValidate: true,
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                  });
+                                }
                               }}
                             />
                           )}
