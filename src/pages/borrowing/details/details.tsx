@@ -66,7 +66,7 @@ const Details = () => {
       form.reset({
         title: data.title || "",
         description: data.description || "",
-        startDate: data.start_date || null,
+        startDate: data.start_date ? new Date(data.start_date) : null,
         borrowingAmount: data.borrowing_amount || 1000,
         tenure: data.tenure || 1, // in years
         emiAmount: data.emi_amount || 1000,
@@ -106,7 +106,7 @@ const Details = () => {
   ] = watchedValues;
 
   const {
-    formState: { isValid, isDirty },
+    formState: { isValid, isDirty, errors },
   } = form;
 
   // Auto-populate borrowing amount based on tenure and EMI amount
@@ -298,7 +298,7 @@ const Details = () => {
   const progressPercentage =
     totalMonths > 0 ? Math.round((paidCount / totalMonths) * 100) : 0;
 
-  console.log(loading, "loading");
+  console.log(loading, "loading", errors, isValid, isDirty);
 
   return (
     <Page
@@ -421,29 +421,6 @@ const Details = () => {
                           });
                         }}
                       />
-                      {manuallyModifiedBorrowingAmount &&
-                        tenure &&
-                        emiAmount && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const calculatedAmount = emiAmount * tenure * 12;
-                              form.setValue(
-                                "borrowingAmount",
-                                calculatedAmount,
-                                {
-                                  shouldValidate: true,
-                                  shouldDirty: true,
-                                  shouldTouch: true,
-                                }
-                              );
-                              setManuallyModifiedBorrowingAmount(false);
-                            }}
-                            className="absolute right-2 top-8 text-xs text-blue-600 hover:text-blue-800 font-medium"
-                          >
-                            Auto-calc
-                          </button>
-                        )}
                     </div>
                   )}
                 />

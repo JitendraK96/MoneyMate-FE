@@ -72,7 +72,7 @@ const items = [
       },
       {
         title: "Borrowing",
-        url: "/dashboard/borrowing/create",
+        url: "/dashboard/borrowing",
       },
     ],
   },
