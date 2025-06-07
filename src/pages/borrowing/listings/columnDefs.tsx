@@ -59,7 +59,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => {
       const amount = row.getValue("borrowing_amount") as number;
-      return <div>₹{amount.toLocaleString("en-IN")}</div>;
+      return <div>₹{amount?.toLocaleString("en-IN")}</div>;
     },
   },
   {
@@ -76,7 +76,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => {
       const amount = row.getValue("emi_amount") as number;
-      return <div>₹{amount.toLocaleString("en-IN")}</div>;
+      return <div>₹{amount?.toLocaleString("en-IN")}</div>;
     },
   },
   {
