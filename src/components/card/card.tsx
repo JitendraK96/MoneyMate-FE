@@ -14,7 +14,7 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 type CardProps = {
-  title: string;
+  title?: string;
   headerContent?: React.ReactNode;
   cardContent?: React.ReactNode;
   footerContent?: React.ReactNode;

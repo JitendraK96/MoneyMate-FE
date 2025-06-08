@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { RootState } from "@/store";
-import { setList } from "@/store/slices/reminderSlice";
+import { setList } from "@/store/slices/borrowingSlice";
 import { useUser } from "@/context/UserContext";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
@@ -19,10 +19,10 @@ const EmiListing = () => {
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const reminder = useSelector((state: RootState) => state.reminder.list);
+  const reminder = useSelector((state: RootState) => state.borrowing.list);
 
   useEffect(() => {
-    const fetchEmiDetails = async () => {
+    const fetchBorrowings = async () => {
       const { data, error } = await supabase
         .from("borrowing_details")
         .select("*")
@@ -37,7 +37,7 @@ const EmiListing = () => {
       dispatch(setList(data || []));
     };
 
-    fetchEmiDetails();
+    fetchBorrowings();
   }, [dispatch, user]);
 
   const handleSearch = (search: string) => {

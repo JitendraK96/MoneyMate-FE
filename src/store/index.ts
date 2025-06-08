@@ -4,6 +4,8 @@ import themeReducer from "./slices/themeSlice";
 import userReducer from "./slices/userSlice";
 import emiDetailsReducer from "./slices/emiDetailsSlice";
 import reminderReducer from "./slices/reminderSlice";
+import borrowingReducer from "./slices/borrowingSlice";
+import goalReducer from "./slices/goalSlice";
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +13,8 @@ export const store = configureStore({
     user: userReducer,
     emiDetails: emiDetailsReducer,
     reminder: reminderReducer,
+    borrowing: borrowingReducer,
+    goal: goalReducer,
   },
 });
 

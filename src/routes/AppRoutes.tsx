@@ -10,6 +10,8 @@ import ReminderDetails from "@/pages/reminder/details";
 import ReminderListing from "@/pages/reminder/listings";
 import BorrowingDetails from "@/pages/borrowing/details";
 import BorrowingListing from "@/pages/borrowing/listings";
+import GoalDetails from "@/pages/goals/details";
+import GoalsListing from "@/pages/goals/listings";
 
 const AppRoutes = () => {
   return (
@@ -27,7 +29,9 @@ const AppRoutes = () => {
       >
         <Route index element={<>Overview</>} />
         <Route path="overview" element={<>Overview</>} />
-        <Route path="goals" element={<>Goals</>} />
+        <Route path="goals" element={<GoalsListing />} />
+        <Route path="goals/create" element={<GoalDetails />} />
+        <Route path="goals/:id" element={<GoalDetails />} />
         <Route path="emitracker" element={<EmiListing />} />
         <Route path="emitracker/create" element={<EMIDetails />} />
         <Route path="emitracker/:id" element={<EMIDetails />} />
