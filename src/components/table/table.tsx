@@ -13,7 +13,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
+// import { ChevronDown } from "lucide-react";
+import Slider from "@/assets/images/sliders.svg";
 
 import { Button } from "@/components/ui/button";
 
@@ -103,9 +104,10 @@ const DataTable = ({ columns, data, onSearch }: any) => {
           >
             <Button
               variant="outline"
-              className="ml-auto text-[var(--content-textprimary)] font-size-extra-small !border-[var(--common-inputborder)] focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="ml-auto text-[var(--content-textprimary)] font-size-extra-small !border-[var(--common-brand)] !bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             >
-              Columns <ChevronDown />
+              <img src={Slider} alt="Logo" className="max-w-[200px]" />
+              {/* Columns <ChevronDown /> */}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
