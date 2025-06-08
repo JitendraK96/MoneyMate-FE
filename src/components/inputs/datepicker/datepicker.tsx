@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Label from "@/components/label";
+import { Portal as PopoverPortal } from "@radix-ui/react-popover";
 
 interface DatePickerProps {
   field: any;
@@ -63,19 +64,21 @@ const DatePicker = ({
             </Button>
           </FormControl>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-auto p-0 bg-[var(--content-background)] text-[var(--content-textsecondary)] font-size-small border-[var(--common-inputborder)] z-100"
-          align="start"
-        >
-          <Calendar
-            mode="single"
-            selected={field.value}
-            onSelect={handleDateSelect}
-            disabled={disabled}
-            initialFocus
-            className="text-[var(--content-textprimary)]"
-          />
-        </PopoverContent>
+        <PopoverPortal>
+          <PopoverContent
+            className="w-auto p-0 bg-[var(--content-background)] text-[var(--content-textsecondary)] font-size-small border-[var(--common-inputborder)] z-100"
+            align="start"
+          >
+            <Calendar
+              mode="single"
+              selected={field.value}
+              onSelect={handleDateSelect}
+              disabled={disabled}
+              initialFocus
+              className="text-[var(--content-textprimary)]"
+            />
+          </PopoverContent>
+        </PopoverPortal>
       </Popover>
       <FormMessage />
     </FormItem>
