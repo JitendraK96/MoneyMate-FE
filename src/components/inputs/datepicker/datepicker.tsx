@@ -64,7 +64,7 @@ const DatePicker = ({
           </FormControl>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 bg-[var(--content-background)] text-[var(--content-textsecondary)] font-size-small border-[var(--common-inputborder)]"
+          className="w-auto p-0 bg-[var(--content-background)] text-[var(--content-textsecondary)] font-size-small border-[var(--common-inputborder)] z-100"
           align="start"
         >
           <Calendar
