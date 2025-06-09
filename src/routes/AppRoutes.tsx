@@ -12,6 +12,7 @@ import BorrowingDetails from "@/pages/borrowing/details";
 import BorrowingListing from "@/pages/borrowing/listings";
 import GoalDetails from "@/pages/goals/details";
 import GoalsListing from "@/pages/goals/listings";
+import Category from "@/pages/category/details";
 
 const AppRoutes = () => {
   return (
@@ -42,6 +43,7 @@ const AppRoutes = () => {
         <Route path="borrowing" element={<BorrowingListing />} />
         <Route path="borrowing/:id" element={<BorrowingDetails />} />
         <Route path="borrowing/create" element={<BorrowingDetails />} />
+        <Route path="category" element={<Category />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/signin" />} />

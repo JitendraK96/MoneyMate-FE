@@ -48,6 +48,10 @@ const items = [
         title: "Expenses",
         url: "/dashboard/expenses",
       },
+      {
+        title: "Category",
+        url: "/dashboard/category",
+      },
     ],
   },
   {
