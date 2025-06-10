@@ -13,6 +13,7 @@ import BorrowingListing from "@/pages/borrowing/listings";
 import GoalDetails from "@/pages/goals/details";
 import GoalsListing from "@/pages/goals/listings";
 import Category from "@/pages/category/details";
+import IncomeDetails from "@/pages/income/details/details";
 
 const AppRoutes = () => {
   return (
@@ -29,7 +30,7 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<>Overview</>} />
-        <Route path="overview" element={<>Overview</>} />
+        <Route path="income" element={<IncomeDetails />} />
         <Route path="goals" element={<GoalsListing />} />
         <Route path="goals/create" element={<GoalDetails />} />
         <Route path="goals/:id" element={<GoalDetails />} />
