@@ -13,7 +13,7 @@ import BorrowingListing from "@/pages/borrowing/listings";
 import GoalDetails from "@/pages/goals/details";
 import GoalsListing from "@/pages/goals/listings";
 import Category from "@/pages/category/details";
-import IncomeDetails from "@/pages/income/details/details";
+import IncomeDetails from "@/pages/enhancedincome/details/details";
 
 const AppRoutes = () => {
   return (

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 type CardProps = {
   title?: string;
@@ -21,6 +22,7 @@ type CardProps = {
   defaultOpen?: boolean;
   collapsible?: boolean;
   onOpenChange?: (open: boolean) => void;
+  className?: string;
 };
 
 const Card = ({
@@ -31,6 +33,7 @@ const Card = ({
   defaultOpen = true,
   collapsible = false,
   onOpenChange,
+  className = "",
 }: CardProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -42,7 +45,12 @@ const Card = ({
   if (!collapsible) {
     // Non-collapsible card (original behavior)
     return (
-      <ShadcnCard className="bg-[var(--content-background)] border-0 gap-1 mt-5">
+      <ShadcnCard
+        className={cn(
+          "bg-[var(--content-background)] border-0 gap-1 mt-5",
+          className
+        )}
+      >
         <CardHeader className="flex justify-between items-center">
           <CardTitle className="text-[var(--content-textprimary)] card-header-title">
             {title}
@@ -58,7 +66,12 @@ const Card = ({
   // Collapsible card
   return (
     <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
-      <ShadcnCard className="bg-[var(--content-background)] border-0 gap-1 mt-5">
+      <ShadcnCard
+        className={cn(
+          "bg-[var(--content-background)] border-0 gap-1 mt-5",
+          className
+        )}
+      >
         <CollapsibleTrigger asChild>
           <CardHeader className="flex justify-between items-center cursor-pointer hover:bg-[var(--content-hover)] transition-colors duration-200 rounded-t-lg">
             <CardTitle className="text-[var(--content-textprimary)] card-header-title">

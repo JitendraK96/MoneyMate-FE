@@ -114,6 +114,11 @@
   /* progress */
   --progress-background: #f3f6fe;
   /* progress */
+
+  /* category */
+  --category-background: oklch(98.5% 0.002 247.839);
+  --category-text: #1f1f21;
+  /* category */
 }
 
 .dark {
@@ -186,6 +191,11 @@
   /* progress */
   --progress-background: #f3f6fe;
   /* progress */
+
+  /* category */
+  --category-background: oklch(98.5% 0.002 247.839);
+  --category-text: #1f1f21;
+  /* category */
 }
 
 @layer base {

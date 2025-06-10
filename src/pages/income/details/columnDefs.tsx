@@ -419,11 +419,11 @@ export const getIncomeColumnsCompact = (
         onEdit(income);
       };
 
-      //   const handleToggleActive = (e: React.MouseEvent) => {
-      //     e.preventDefault();
-      //     e.stopPropagation();
-      //     onToggleActive(income);
-      //   };
+      const handleToggleActive = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggleActive(income);
+      };
 
       const handleDelete = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -431,98 +431,62 @@ export const getIncomeColumnsCompact = (
         onDelete(income.id);
       };
 
-      //   return (
-      //     <div className="flex justify-end">
-      //       <DropdownMenu>
-      //         <DropdownMenuTrigger asChild>
-      //           <Button
-      //             variant="ghost"
-      //             className="h-6 w-6 p-0 hover:bg-gray-100"
-      //             onClick={(e) => e.stopPropagation()}
-      //           >
-      //             <span className="sr-only">Open menu</span>
-      //             <MoreHorizontal className="h-4 w-4" />
-      //           </Button>
-      //         </DropdownMenuTrigger>
-      //         <DropdownMenuContent
-      //           align="end"
-      //           className="w-40 bg-white border border-gray-200 shadow-lg z-50"
-      //           side="bottom"
-      //           sideOffset={5}
-      //         >
-      //           <DropdownMenuItem
-      //             onClick={handleEdit}
-      //             className="cursor-pointer hover:bg-gray-50 text-xs px-2 py-1.5"
-      //           >
-      //             <Edit className="mr-2 h-3 w-3" />
-      //             Edit
-      //           </DropdownMenuItem>
-
-      //           <DropdownMenuItem
-      //             onClick={handleToggleActive}
-      //             className="cursor-pointer hover:bg-gray-50 text-xs px-2 py-1.5"
-      //           >
-      //             {income.is_active ? (
-      //               <>
-      //                 <EyeOff className="mr-2 h-3 w-3" />
-      //                 Deactivate
-      //               </>
-      //             ) : (
-      //               <>
-      //                 <Eye className="mr-2 h-3 w-3" />
-      //                 Activate
-      //               </>
-      //             )}
-      //           </DropdownMenuItem>
-
-      //           <DropdownMenuSeparator className="bg-gray-200" />
-
-      //           <DropdownMenuItem
-      //             onClick={handleDelete}
-      //             className="cursor-pointer hover:bg-red-50 text-red-600 text-xs px-2 py-1.5"
-      //           >
-      //             <Trash2 className="mr-2 h-3 w-3" />
-      //             Delete
-      //           </DropdownMenuItem>
-      //         </DropdownMenuContent>
-      //       </DropdownMenu>
-      //     </div>
-      //   );
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            asChild
-            className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
-          >
-            <Button
-              variant="ghost"
-              className="ml-auto text-[var(--content-textprimary)] font-size-extra-small !border-[var(--common-inputborder)]"
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-6 w-6 p-0 hover:bg-gray-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-40 bg-white border border-gray-200 shadow-lg z-50"
+              side="bottom"
+              sideOffset={5}
             >
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
-          >
-            <DropdownMenuItem
-              onClick={handleEdit}
-              className="text-[var(--content-textprimary)] font-size-extra-small"
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleDelete}
-              className="text-[var(--common-error)] font-size-extra-small"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onClick={handleEdit}
+                className="cursor-pointer hover:bg-gray-50 text-xs px-2 py-1.5"
+              >
+                <Edit className="mr-2 h-3 w-3" />
+                Edit
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={handleToggleActive}
+                className="cursor-pointer hover:bg-gray-50 text-xs px-2 py-1.5"
+              >
+                {income.is_active ? (
+                  <>
+                    <EyeOff className="mr-2 h-3 w-3" />
+                    Deactivate
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-3 w-3" />
+                    Activate
+                  </>
+                )}
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-gray-200" />
+
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className="cursor-pointer hover:bg-red-50 text-red-600 text-xs px-2 py-1.5"
+              >
+                <Trash2 className="mr-2 h-3 w-3" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       );
     },
   },
