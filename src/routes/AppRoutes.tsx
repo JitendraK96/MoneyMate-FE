@@ -13,6 +13,10 @@ import BorrowingListing from "@/pages/borrowing/listings";
 import GoalDetails from "@/pages/goals/details";
 import GoalsListing from "@/pages/goals/listings";
 import Category from "@/pages/category/details";
+// import IncomeDetails from "@/pages/enhancedincome/details/details";
+import IncomeManagement from "@/pages/income/listings";
+import IncomeForm from "@/pages/income/details";
+import CategoryAllocation from "@/pages/income/categoryallocation";
 
 const AppRoutes = () => {
   return (
@@ -29,7 +33,11 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<>Overview</>} />
-        <Route path="overview" element={<>Overview</>} />
+        {/* <Route path="income" element={<IncomeDetails />} /> */}
+        <Route path="income" element={<IncomeManagement />} />
+        <Route path="income/create" element={<IncomeForm />} />
+        <Route path="income/:id" element={<IncomeForm />} />
+        <Route path="income/:id/allocate" element={<CategoryAllocation />} />
         <Route path="goals" element={<GoalsListing />} />
         <Route path="goals/create" element={<GoalDetails />} />
         <Route path="goals/:id" element={<GoalDetails />} />
