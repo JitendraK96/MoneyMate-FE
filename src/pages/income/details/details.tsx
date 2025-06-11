@@ -1,224 +1,343 @@
-import { useState, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormField } from "@/components/ui/form";
+import { Input, Button } from "@/components/inputs";
 import Page from "@/components/page";
 import Card from "@/components/card";
-import { Button } from "@/components/inputs";
-import DataTable from "@/components/table";
-import { Plus, DollarSign, PieChart, TrendingUp, Target } from "lucide-react";
-import { getIncomeColumns } from "./columnDefs";
-import AddIncomeModal from "../modals/AddIncomeModal/AddIncomeModal";
-import {
-  Income,
-  TotalIncomeAllocation,
-  BUCKETS,
-  FREQUENCY_CONVERTER,
-  IncomeStatistics,
-} from "../types";
+import { Calculator, TrendingUp, Info } from "lucide-react";
 
-const IncomeManagement = () => {
+// Types
+interface EnhancedIncome {
+  id: string;
+  user_id: string;
+  source: string;
+  description?: string;
+  amount: number;
+  frequency: "monthly" | "yearly" | "weekly" | "bi-weekly";
+  needs_percentage: number;
+  wants_percentage: number;
+  savings_percentage: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  monthly_amount?: number;
+}
+
+const INCOME_FREQUENCIES = [
+  { key: "monthly", label: "Monthly", multiplier: 12 },
+  { key: "yearly", label: "Yearly", multiplier: 1 },
+  { key: "weekly", label: "Weekly", multiplier: 52 },
+  { key: "bi-weekly", label: "Bi-Weekly", multiplier: 26 },
+] as const;
+
+const DEFAULT_SPLIT = {
+  needs_percentage: 50,
+  wants_percentage: 30,
+  savings_percentage: 20,
+} as const;
+
+const BUCKETS = [
+  {
+    key: "needs",
+    label: "Needs",
+    color: "#ef4444",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    textColor: "text-red-800",
+    recommendedPercentage: 50,
+    description: "Essential expenses like rent, utilities, groceries",
+  },
+  {
+    key: "wants",
+    label: "Wants",
+    color: "#3b82f6",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+    textColor: "text-blue-800",
+    recommendedPercentage: 30,
+    description: "Entertainment, dining out, hobbies",
+  },
+  {
+    key: "savings",
+    label: "Savings",
+    color: "#22c55e",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+    textColor: "text-green-800",
+    recommendedPercentage: 20,
+    description: "Emergency fund, investments, debt repayment",
+  },
+] as const;
+
+const INCOME_CONSTRAINTS = {
+  MIN_AMOUNT: 0.01,
+  MAX_AMOUNT: 99999999.99,
+  MIN_SOURCE_LENGTH: 2,
+  MAX_SOURCE_LENGTH: 255,
+  MAX_DESCRIPTION_LENGTH: 1000,
+  MIN_PERCENTAGE: 0,
+  MAX_PERCENTAGE: 100,
+  REQUIRED_PERCENTAGE_SUM: 100,
+} as const;
+
+const IncomeFormSchema = z.object({
+  source: z
+    .string()
+    .min(
+      INCOME_CONSTRAINTS.MIN_SOURCE_LENGTH,
+      `Source must be at least ${INCOME_CONSTRAINTS.MIN_SOURCE_LENGTH} characters`
+    )
+    .max(
+      INCOME_CONSTRAINTS.MAX_SOURCE_LENGTH,
+      `Source must be less than ${INCOME_CONSTRAINTS.MAX_SOURCE_LENGTH} characters`
+    ),
+  description: z
+    .string()
+    .max(
+      INCOME_CONSTRAINTS.MAX_DESCRIPTION_LENGTH,
+      `Description must be less than ${INCOME_CONSTRAINTS.MAX_DESCRIPTION_LENGTH} characters`
+    )
+    .optional(),
+  amount: z
+    .number()
+    .min(
+      INCOME_CONSTRAINTS.MIN_AMOUNT,
+      `Amount must be at least ₹${INCOME_CONSTRAINTS.MIN_AMOUNT}`
+    )
+    .max(
+      INCOME_CONSTRAINTS.MAX_AMOUNT,
+      `Amount must be less than ₹${INCOME_CONSTRAINTS.MAX_AMOUNT}`
+    ),
+  frequency: z.enum(["monthly", "yearly", "weekly", "bi-weekly"]),
+  needs_percentage: z.number().min(0).max(100),
+  wants_percentage: z.number().min(0).max(100),
+  savings_percentage: z.number().min(0).max(100),
+  is_active: z.boolean(),
+});
+
+const IncomeForm: React.FC = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useUser();
-  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [income, setIncome] = useState<EnhancedIncome | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchIncomes();
-    }
-  }, [user?.id]);
+  // Determine if we're in edit mode
+  const isEditMode = id;
+  const isCreateMode = !id;
+  console.log(id, "OKOKOK");
 
-  const fetchIncomes = async () => {
-    setIsLoading(true);
-    try {
-      const { data: incomesData, error } = await supabase
-        .from("incomes")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      setIncomes(incomesData || []);
-    } catch (error) {
-      console.error("Error fetching incomes:", error);
-      toast.error("Failed to load incomes. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAddIncome = () => {
-    setEditingIncome(null);
-    setIsIncomeModalOpen(true);
-  };
-
-  const handleEditIncome = (income: Income) => {
-    setEditingIncome(income);
-    setIsIncomeModalOpen(true);
-  };
-
-  const handleDeleteIncome = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("incomes")
-        .delete()
-        .eq("id", id)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      toast.success("Income deleted successfully!");
-      fetchIncomes();
-    } catch (error) {
-      console.error("Error deleting income:", error);
-      toast.error("Failed to delete income. Please try again.");
-    }
-  };
-
-  const handleToggleActive = async (income: Income) => {
-    try {
-      const { error } = await supabase
-        .from("incomes")
-        .update({ is_active: !income.is_active })
-        .eq("id", income.id)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      toast.success(
-        `Income ${
-          !income.is_active ? "activated" : "deactivated"
-        } successfully!`
-      );
-      fetchIncomes();
-    } catch (error) {
-      console.error("Error toggling income status:", error);
-      toast.error("Failed to update income status. Please try again.");
-    }
-  };
-
-  const handleIncomeModalClose = () => {
-    setIsIncomeModalOpen(false);
-    setEditingIncome(null);
-    fetchIncomes();
-  };
-
-  const handleSearch = (search: string) => {
-    setSearchQuery(search.trim());
-  };
-
-  const filteredIncomes = incomes.filter((income) => {
-    if (!searchQuery) return true;
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      income.source.toLowerCase().includes(searchLower) ||
-      (income.description &&
-        income.description.toLowerCase().includes(searchLower)) ||
-      income.frequency.toLowerCase().includes(searchLower)
-    );
+  const form = useForm<z.infer<typeof IncomeFormSchema>>({
+    resolver: zodResolver(IncomeFormSchema),
+    defaultValues: {
+      source: "",
+      description: "",
+      amount: 0,
+      frequency: "monthly",
+      needs_percentage: DEFAULT_SPLIT.needs_percentage,
+      wants_percentage: DEFAULT_SPLIT.wants_percentage,
+      savings_percentage: DEFAULT_SPLIT.savings_percentage,
+      is_active: true,
+    },
   });
 
-  // Calculate total allocations from active incomes
-  const totalAllocations: TotalIncomeAllocation = incomes
-    .filter((income) => income.is_active)
-    .reduce(
-      (acc, income) => {
-        const monthlyAmount = FREQUENCY_CONVERTER.toMonthly(
-          income.amount,
-          income.frequency
-        );
-
-        const needsAmount = (monthlyAmount * income.needs_percentage) / 100;
-        const wantsAmount = (monthlyAmount * income.wants_percentage) / 100;
-        const savingsAmount = (monthlyAmount * income.savings_percentage) / 100;
-
-        return {
-          total_monthly_income: acc.total_monthly_income + monthlyAmount,
-          total_needs_amount: acc.total_needs_amount + needsAmount,
-          total_wants_amount: acc.total_wants_amount + wantsAmount,
-          total_savings_amount: acc.total_savings_amount + savingsAmount,
-          needs_percentage: 0, // Will calculate after
-          wants_percentage: 0, // Will calculate after
-          savings_percentage: 0, // Will calculate after
-          active_income_count: acc.active_income_count + 1,
-          total_income_count: acc.total_income_count,
-        };
-      },
-      {
-        total_monthly_income: 0,
-        total_needs_amount: 0,
-        total_wants_amount: 0,
-        total_savings_amount: 0,
-        needs_percentage: 0,
-        wants_percentage: 0,
-        savings_percentage: 0,
-        active_income_count: 0,
-        total_income_count: incomes.length,
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) {
+        navigate("/dashboard/income");
+        return;
       }
-    );
 
-  // Calculate overall percentages
-  if (totalAllocations.total_monthly_income > 0) {
-    totalAllocations.needs_percentage =
-      (totalAllocations.total_needs_amount /
-        totalAllocations.total_monthly_income) *
-      100;
-    totalAllocations.wants_percentage =
-      (totalAllocations.total_wants_amount /
-        totalAllocations.total_monthly_income) *
-      100;
-    totalAllocations.savings_percentage =
-      (totalAllocations.total_savings_amount /
-        totalAllocations.total_monthly_income) *
-      100;
-  }
+      setIsLoading(true);
+      try {
+        // Fetch income data if editing
+        if (isEditMode && id) {
+          try {
+            // Try enhanced view first
+            const { data: enhancedData, error } = await supabase
+              .from("incomes_with_category_allocations")
+              .select("*")
+              .eq("id", id)
+              .eq("user_id", user.id)
+              .single();
 
-  // Calculate statistics
-  const activeIncomes = incomes.filter((income) => income.is_active);
-  const statistics: IncomeStatistics = {
-    highest_income_source:
-      activeIncomes.length > 0
-        ? activeIncomes.reduce((max, income) => {
-            const maxMonthly = FREQUENCY_CONVERTER.toMonthly(
-              max.amount,
-              max.frequency
+            if (enhancedData && !error) {
+              const enhancedIncome = enhancedData as EnhancedIncome;
+              setIncome(enhancedIncome);
+
+              form.reset({
+                source: enhancedIncome.source,
+                description: enhancedIncome.description || "",
+                amount: enhancedIncome.amount,
+                frequency: enhancedIncome.frequency,
+                needs_percentage: enhancedIncome.needs_percentage,
+                wants_percentage: enhancedIncome.wants_percentage,
+                savings_percentage: enhancedIncome.savings_percentage,
+                is_active: enhancedIncome.is_active,
+              });
+            }
+          } catch (error) {
+            console.log(
+              "Enhanced view not available, using basic income data",
+              error
             );
-            const currentMonthly = FREQUENCY_CONVERTER.toMonthly(
-              income.amount,
-              income.frequency
-            );
-            return currentMonthly > maxMonthly ? income : max;
+            // Fallback to regular incomes table
+            const { data: basicData, error: basicError } = await supabase
+              .from("incomes")
+              .select("*")
+              .eq("id", id)
+              .eq("user_id", user.id)
+              .single();
+
+            if (basicError) throw basicError;
+            if (basicData) {
+              setIncome(basicData);
+              form.reset({
+                source: basicData.source,
+                description: basicData.description || "",
+                amount: basicData.amount,
+                frequency: basicData.frequency,
+                needs_percentage: basicData.needs_percentage,
+                wants_percentage: basicData.wants_percentage,
+                savings_percentage: basicData.savings_percentage,
+                is_active: basicData.is_active,
+              });
+            }
+          }
+        } else if (isCreateMode) {
+          // Reset form for create mode
+          form.reset({
+            source: "",
+            description: "",
+            amount: 0,
+            frequency: "monthly",
+            needs_percentage: DEFAULT_SPLIT.needs_percentage,
+            wants_percentage: DEFAULT_SPLIT.wants_percentage,
+            savings_percentage: DEFAULT_SPLIT.savings_percentage,
+            is_active: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data. Please try again.");
+        navigate("/dashboard/income");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, isEditMode, isCreateMode, user?.id, navigate, form]);
+
+  // Watch form values for calculations
+  const watchedPercentages = form.watch([
+    "needs_percentage",
+    "wants_percentage",
+    "savings_percentage",
+  ]);
+  const watchedAmount = form.watch("amount");
+  const watchedFrequency = form.watch("frequency");
+
+  const totalPercentage = watchedPercentages.reduce(
+    (sum, val) => sum + (val || 0),
+    0
+  );
+  const isPercentageValid =
+    totalPercentage === INCOME_CONSTRAINTS.REQUIRED_PERCENTAGE_SUM;
+
+  const calculateMonthlyAmount = () => {
+    if (!watchedAmount || !watchedFrequency) return 0;
+    const freq = INCOME_FREQUENCIES.find((f) => f.key === watchedFrequency);
+    return freq ? (watchedAmount * freq.multiplier) / 12 : watchedAmount;
+  };
+
+  const calculateYearlyAmount = () => {
+    if (!watchedAmount || !watchedFrequency) return 0;
+    const freq = INCOME_FREQUENCIES.find((f) => f.key === watchedFrequency);
+    return freq ? watchedAmount * freq.multiplier : watchedAmount;
+  };
+
+  const monthlyAmount = calculateMonthlyAmount();
+  const yearlyAmount = calculateYearlyAmount();
+
+  const resetToDefault = () => {
+    form.setValue("needs_percentage", DEFAULT_SPLIT.needs_percentage);
+    form.setValue("wants_percentage", DEFAULT_SPLIT.wants_percentage);
+    form.setValue("savings_percentage", DEFAULT_SPLIT.savings_percentage);
+    toast.success("Reset to 50/30/20 split!");
+  };
+
+  const onSubmit = async (values: z.infer<typeof IncomeFormSchema>) => {
+    if (!isPercentageValid) {
+      toast.error("Percentages must add up to 100%");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Save or update income
+      if (isEditMode && income?.id) {
+        const { error } = await supabase
+          .from("incomes")
+          .update({
+            source: values.source,
+            description: values.description,
+            amount: values.amount,
+            frequency: values.frequency,
+            needs_percentage: values.needs_percentage,
+            wants_percentage: values.wants_percentage,
+            savings_percentage: values.savings_percentage,
+            is_active: values.is_active,
+            updated_at: new Date().toISOString(),
           })
-        : null,
-    lowest_income_source:
-      activeIncomes.length > 0
-        ? activeIncomes.reduce((min, income) => {
-            const minMonthly = FREQUENCY_CONVERTER.toMonthly(
-              min.amount,
-              min.frequency
-            );
-            const currentMonthly = FREQUENCY_CONVERTER.toMonthly(
-              income.amount,
-              income.frequency
-            );
-            return currentMonthly < minMonthly ? income : min;
-          })
-        : null,
-    average_monthly_income:
-      activeIncomes.length > 0
-        ? totalAllocations.total_monthly_income / activeIncomes.length
-        : 0,
-    total_yearly_income: totalAllocations.total_monthly_income * 12,
-    frequency_distribution: {
-      monthly: incomes.filter((i) => i.frequency === "monthly").length,
-      yearly: incomes.filter((i) => i.frequency === "yearly").length,
-      weekly: incomes.filter((i) => i.frequency === "weekly").length,
-      "bi-weekly": incomes.filter((i) => i.frequency === "bi-weekly").length,
-    },
+          .eq("id", income.id)
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } else if (isCreateMode) {
+        const { data, error } = await supabase
+          .from("incomes")
+          .insert([
+            {
+              user_id: user.id,
+              source: values.source,
+              description: values.description,
+              amount: values.amount,
+              frequency: values.frequency,
+              needs_percentage: values.needs_percentage,
+              wants_percentage: values.wants_percentage,
+              savings_percentage: values.savings_percentage,
+              is_active: values.is_active,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log(data, "data");
+      }
+
+      toast.success(
+        isEditMode
+          ? "Income updated successfully!"
+          : "Income created successfully!"
+      );
+      navigate("/dashboard/income");
+    } catch (error) {
+      console.error("Error saving income:", error);
+      toast.error("Failed to save income. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -229,203 +348,242 @@ const IncomeManagement = () => {
     }).format(amount);
   };
 
+  console.log(isLoading);
+
   return (
     <Page
-      title="Income Management"
-      subTitle="Manage your income sources and budget allocation across needs, wants, and savings"
+      title={isEditMode ? "Edit Income Source" : "Add New Income Source"}
+      subTitle={
+        isEditMode
+          ? "Update your income source and budget allocation percentages."
+          : "Add a new income source and set your budget allocation using the 50/30/20 rule."
+      }
     >
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <Form {...form}>
         <Card
+          title="Income Details"
           cardContent={
-            <div className="text-center">
-              <DollarSign className="w-8 h-8 mx-auto mb-2 text-[var(--common-brand)]" />
-              <div className="text-2xl font-bold text-[var(--content-textprimary)]">
-                {formatCurrency(totalAllocations.total_monthly_income)}
-              </div>
-              <div className="text-sm text-[var(--content-textsecondary)]">
-                Total Monthly Income
-              </div>
-              <div className="text-xs text-[var(--content-textsecondary)] mt-1">
-                {totalAllocations.active_income_count} active sources
-              </div>
-            </div>
-          }
-        />
-
-        <Card
-          cardContent={
-            <div className="text-center">
-              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
-              <div className="text-2xl font-bold text-[var(--content-textprimary)]">
-                {formatCurrency(statistics.total_yearly_income)}
-              </div>
-              <div className="text-sm text-[var(--content-textsecondary)]">
-                Yearly Income
-              </div>
-              <div className="text-xs text-[var(--content-textsecondary)] mt-1">
-                Projected annual total
-              </div>
-            </div>
-          }
-        />
-
-        <Card
-          cardContent={
-            <div className="text-center">
-              <Target className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-              <div className="text-2xl font-bold text-[var(--content-textprimary)]">
-                {statistics.highest_income_source
-                  ? formatCurrency(
-                      FREQUENCY_CONVERTER.toMonthly(
-                        statistics.highest_income_source.amount,
-                        statistics.highest_income_source.frequency
-                      )
-                    )
-                  : formatCurrency(0)}
-              </div>
-              <div className="text-sm text-[var(--content-textsecondary)]">
-                Highest Source
-              </div>
-              <div className="text-xs text-[var(--content-textsecondary)] mt-1 truncate">
-                {statistics.highest_income_source?.source || "No sources"}
-              </div>
-            </div>
-          }
-        />
-
-        <Card
-          cardContent={
-            <div className="text-center">
-              <PieChart className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-              <div className="text-2xl font-bold text-[var(--content-textprimary)]">
-                {formatCurrency(statistics.average_monthly_income)}
-              </div>
-              <div className="text-sm text-[var(--content-textsecondary)]">
-                Average Monthly
-              </div>
-              <div className="text-xs text-[var(--content-textsecondary)] mt-1">
-                Per income source
-              </div>
-            </div>
-          }
-        />
-      </div>
-
-      {/* Budget Allocation Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {BUCKETS.map((bucket) => {
-          const amount = totalAllocations[
-            `total_${bucket.key}_amount` as keyof TotalIncomeAllocation
-          ] as number;
-          const percentage = totalAllocations[
-            `${bucket.key}_percentage` as keyof TotalIncomeAllocation
-          ] as number;
-          const isOptimal =
-            Math.abs(percentage - bucket.recommendedPercentage) <= 5; // Within 5% of recommended
-
-          return (
-            <Card
-              key={bucket.key}
-              cardContent={
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: bucket.color }}
+            <div className="space-y-4">
+              <div className="form-wrapper two-column">
+                <FormField
+                  control={form.control}
+                  name="source"
+                  render={({ field }) => (
+                    <Input
+                      field={field}
+                      type="text"
+                      placeholder="e.g., Salary, Freelance, Business, Rental Income"
+                      label="Income Source"
+                      required
                     />
-                    <div className="text-lg font-bold text-[var(--content-textprimary)]">
-                      {bucket.label}
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold text-[var(--content-textprimary)] mb-1">
-                    {formatCurrency(amount)}
-                  </div>
-                  <div className="text-sm text-[var(--content-textsecondary)] mb-2">
-                    {percentage.toFixed(1)}% of total
-                  </div>
-                  <div className="flex items-center justify-center gap-1">
-                    <div
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        isOptimal
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      Target: {bucket.recommendedPercentage}%
-                    </div>
-                  </div>
-                  <div className="text-xs text-[var(--content-textsecondary)] mt-2">
-                    {bucket.description}
-                  </div>
-                </div>
-              }
-            />
-          );
-        })}
-      </div>
-
-      {/* Income Sources Table */}
-      <Card
-        title="Income Sources"
-        headerContent={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              title="Add Income Source"
-              className="w-fit"
-              onClick={handleAddIncome}
-              icon={<Plus />}
-            />
-          </div>
-        }
-        cardContent={
-          <>
-            {incomes.length === 0 && !isLoading ? (
-              <div className="text-center py-12">
-                <div className="text-[var(--content-textsecondary)] mb-4">
-                  <PieChart size={48} className="mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No income sources yet
-                  </h3>
-                  <p className="text-sm">
-                    Add your income sources to start managing your budget
-                    allocation.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  title="Add Your First Income Source"
-                  className="w-fit"
-                  onClick={handleAddIncome}
-                  icon={<Plus />}
+                  )}
                 />
               </div>
-            ) : (
-              <DataTable
-                data={filteredIncomes}
-                columns={getIncomeColumns(
-                  handleEditIncome,
-                  handleDeleteIncome,
-                  handleToggleActive,
-                  formatCurrency
-                )}
-                onSearch={handleSearch}
-                loading={isLoading}
-              />
-            )}
-          </>
-        }
-      />
+              <div className="form-wrapper two-column">
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <Input
+                      field={field}
+                      type="textarea"
+                      placeholder="Optional description for this income source"
+                      label="Description"
+                      rows={2}
+                    />
+                  )}
+                />
+              </div>
+              <div className="form-wrapper two-column">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <Input
+                      field={field}
+                      type="number"
+                      placeholder="50000"
+                      label="Amount (₹)"
+                      required
+                      step="0.01"
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value) || 0)
+                      }
+                    />
+                  )}
+                />
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-500 mt-0.5" />
+                  <div className="font-size-extra-small text-blue-700">
+                    <p className="font-semibold mb-1">
+                      50/30/20 Rule Recommended:
+                    </p>
+                    <p>
+                      50% for Needs (essentials) • 30% for Wants (lifestyle) •
+                      20% for Savings (future)
+                    </p>
+                    <p className="mt-1 font-size-extra-small">
+                      💡 Set your budget percentages here. You can allocate
+                      specific amounts to categories later.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-      {/* Modal */}
-      <AddIncomeModal
-        isOpen={isIncomeModalOpen}
-        onClose={handleIncomeModalClose}
-        income={editingIncome}
-      />
+              {/* Preview calculations */}
+              {(monthlyAmount > 0 || yearlyAmount > 0) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calculator className="w-4 h-4 text-blue-600" />
+                      <span className="font-size-extra-small font-semibold text-blue-800">
+                        Monthly Equivalent
+                      </span>
+                    </div>
+                    <div className="text-lg font-semibold text-blue-900">
+                      {formatCurrency(monthlyAmount)}
+                    </div>
+                    <div className="font-size-extra-small text-blue-700">
+                      For budget planning
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-4 h-4 text-green-600" />
+                      <span className="font-size-extra-small font-semibold text-green-800">
+                        Yearly Total
+                      </span>
+                    </div>
+                    <div className="text-lg font-semibold text-green-900">
+                      {formatCurrency(yearlyAmount)}
+                    </div>
+                    <div className="font-size-extra-small text-green-700">
+                      Annual projection
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {BUCKETS.map((bucket) => {
+                  const bucketPercentage = form.watch(
+                    `${bucket.key}_percentage`
+                  ) as number;
+                  const bucketAmount = (monthlyAmount * bucketPercentage) / 100;
+
+                  return (
+                    <div
+                      key={bucket.key}
+                      className={`rounded-xl border-2 ${bucket.borderColor} ${bucket.bgColor} p-6 transition-all duration-200 hover:shadow-sm`}
+                    >
+                      {/* Bucket Header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div>
+                          <div
+                            className={`font-semibold text-lg ${bucket.textColor}`}
+                          >
+                            {bucket.label}
+                          </div>
+                          <div className="font-size-extra-small text-gray-600">
+                            {bucket.description} • Target:{" "}
+                            {bucket.recommendedPercentage}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bucket Percentage Input */}
+                      <FormField
+                        control={form.control}
+                        name={`${bucket.key}_percentage` as any}
+                        render={({ field }) => (
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                field={field}
+                                type="number"
+                                step="1"
+                                onChange={(e) =>
+                                  field.onChange(
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="w-20 text-center text-lg font-semibold"
+                              />
+                              <span className="text-lg font-size-extra-small text-gray-600">
+                                %
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500">=</span>
+                              <span className="text-lg font-bold text-gray-900">
+                                {formatCurrency(bucketAmount)}
+                              </span>
+                              <span className="font-size-extra-small text-gray-500">
+                                /month
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div
+                className={`text-center p-6 rounded-xl font-medium border-2 ${
+                  isPercentageValid
+                    ? "bg-green-50 text-green-700 border-green-200"
+                    : "bg-red-50 text-red-700 border-red-200"
+                }`}
+              >
+                <div className="text-2xl font-bold mb-2">
+                  Total: {totalPercentage}%
+                </div>
+                <div className="text-base">
+                  {isPercentageValid
+                    ? "✓ Perfect! Percentages add up to 100%"
+                    : `${
+                        totalPercentage > 100 ? "Over" : "Under"
+                      } by ${Math.abs(
+                        totalPercentage - 100
+                      )}% - Must equal 100%`}
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="submit"
+                  title={
+                    isSaving
+                      ? "Saving..."
+                      : isEditMode
+                      ? "Update Income"
+                      : "Create Income"
+                  }
+                  disabled={
+                    !form.formState.isValid ||
+                    !isPercentageValid ||
+                    isSaving ||
+                    (Boolean(isEditMode) && !form.formState.isDirty)
+                  }
+                  onClick={form.handleSubmit(onSubmit)}
+                  className="w-fit"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={resetToDefault}
+                  title="Reset to 50/30/20"
+                  className="w-fit"
+                />
+              </div>
+            </div>
+          }
+        />
+      </Form>
     </Page>
   );
 };
 
-export default IncomeManagement;
+export default IncomeForm;
