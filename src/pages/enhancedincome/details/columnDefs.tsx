@@ -117,6 +117,7 @@ const EnhancedAllocationCell = ({
     const hasAllocations =
       categoryAllocations && categoryAllocations.length > 0;
 
+    console.log(bucketLabel);
     return (
       <div key={bucketKey} className="mb-2">
         {/* Bucket Header */}
