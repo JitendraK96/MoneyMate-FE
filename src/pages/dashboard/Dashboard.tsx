@@ -18,22 +18,11 @@ export default function DashboardLayout() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, is_premium")
-        .eq("id", userData.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError.message);
-        return;
-      }
-
       setUser({
         id: userData.user.id,
         email: userData.user.email || "",
         fullName: userData.user.user_metadata?.full_name || "",
-        isPremium: profile.is_premium,
+        isPremium: false,
       });
     };
 
