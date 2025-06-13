@@ -74,19 +74,22 @@ interface DateFormat {
 
 const ExpenseDetailsPage: React.FC = () => {
   const { user } = useUser();
-  const { expenseId } = useParams<{ expenseId?: string }>();
+  const { id } = useParams<{ id?: string }>();
   const [isEditMode, setIsEditMode] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<PayeeWithCategory[]>([]);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingExistingTransactions, setIsLoadingExistingTransactions] =
+    useState(false);
   const [fileStats, setFileStats] = useState<FileUploadStats | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedDateFormat, setSelectedDateFormat] = useState<string>("auto");
   const [showDateFormatPicker, setShowDateFormatPicker] = useState(false);
 
+  console.log(id, "id");
   // Define available date formats
   const dateFormats: DateFormat[] = [
     {
@@ -206,24 +209,78 @@ const ExpenseDetailsPage: React.FC = () => {
     fetchCategoriesAndPayees();
   }, [user?.id]);
 
-  // Load existing expense if expenseId is provided
+  // Load existing transactions if id is provided
   useEffect(() => {
-    const loadExpense = async () => {
-      if (!expenseId || !user?.id) return;
+    const loadExpenseTransactions = async () => {
+      if (!id || !user?.id) return;
 
+      setIsLoadingExistingTransactions(true);
       try {
         setIsEditMode(true);
-        toast.info(
-          `Edit mode: Adding transactions to expense group ${expenseId}`
-        );
+
+        // Fetch existing transactions for this expense group
+        const { data: existingExpenses, error } = await supabase
+          .from("expenses_with_category")
+          .select("*")
+          .eq("user_id", user.id)
+          .like("notes", `%Batch: ${id}%`)
+          .order("date", { ascending: false });
+
+        if (error) throw error;
+
+        console.log(existingExpenses, "existingExpenses");
+
+        if (existingExpenses && existingExpenses.length > 0) {
+          // Transform existing expenses to match ParsedTransaction format
+          const existingTransactions: ParsedTransaction[] =
+            existingExpenses.map((expense, index) => ({
+              id: expense.id, // Use actual database ID instead of temp ID
+              date: expense.date,
+              payee: expense.payee,
+              amount: parseFloat(expense.amount.toString()),
+              category_id: expense.category_id,
+              category_name: expense.category_name,
+              category_color: expense.category_color,
+              bucket: expense.category_bucket,
+              isValid: true,
+              errors: [],
+              originalRowIndex: index,
+              isAutoMatched: false, // Existing transactions are already categorized
+            }));
+
+          setTransactions(existingTransactions);
+
+          // Calculate stats for existing transactions
+          const totalAmount = existingTransactions.reduce(
+            (sum, t) => sum + t.amount,
+            0
+          );
+          setFileStats({
+            totalRows: existingTransactions.length,
+            validRows: existingTransactions.length,
+            invalidRows: 0,
+            totalAmount,
+            autoMatchedRows: 0,
+          });
+
+          toast.success(
+            `Loaded ${existingTransactions.length} existing transaction${
+              existingTransactions.length === 1 ? "" : "s"
+            } for expense group ${id}`
+          );
+        } else {
+          toast.info(`Edit mode: Adding transactions to expense group ${id}`);
+        }
       } catch (error) {
-        console.error("Error loading expense:", error);
-        toast.error("Failed to load expense");
+        console.error("Error loading expense transactions:", error);
+        toast.error("Failed to load existing transactions");
+      } finally {
+        setIsLoadingExistingTransactions(false);
       }
     };
 
-    loadExpense();
-  }, [expenseId, user?.id]);
+    loadExpenseTransactions();
+  }, [id, user?.id]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -500,7 +557,7 @@ const ExpenseDetailsPage: React.FC = () => {
             const matchedPayee = matchPayeeToCategory(processedPayee);
 
             const transaction: ParsedTransaction = {
-              id: `temp_${i}_${Date.now()}`,
+              id: `temp_${i}_${Date.now()}`, // Keep temp_ prefix for new transactions
               date: processedDate,
               payee: processedPayee,
               amount: processedAmount,
@@ -569,36 +626,54 @@ const ExpenseDetailsPage: React.FC = () => {
         throw new Error("No valid transactions found in the file");
       }
 
-      setTransactions(parsedTransactions);
+      // In edit mode, append new transactions to existing ones
+      // In new mode, replace all transactions
+      setTransactions((prev) => {
+        const updatedTransactions = isEditMode
+          ? [...prev, ...parsedTransactions]
+          : parsedTransactions;
 
-      // Calculate stats including auto-matched transactions
-      const validTransactions = parsedTransactions.filter((t) => t.isValid);
-      const autoMatchedTransactions = parsedTransactions.filter(
-        (t) => t.isAutoMatched
-      );
-      const totalAmount = validTransactions.reduce(
-        (sum, t) => sum + t.amount,
-        0
-      );
+        // Calculate stats for all transactions
+        const validTransactions = updatedTransactions.filter((t) => t.isValid);
+        const autoMatchedTransactions = updatedTransactions.filter(
+          (t) => t.isAutoMatched
+        );
+        const totalAmount = validTransactions.reduce(
+          (sum, t) => sum + t.amount,
+          0
+        );
 
-      setFileStats({
-        totalRows: parsedTransactions.length,
-        validRows: validTransactions.length,
-        invalidRows: parsedTransactions.length - validTransactions.length,
-        totalAmount,
-        autoMatchedRows: autoMatchedTransactions.length,
+        setFileStats({
+          totalRows: updatedTransactions.length,
+          validRows: validTransactions.length,
+          invalidRows: updatedTransactions.length - validTransactions.length,
+          totalAmount,
+          autoMatchedRows: autoMatchedTransactions.length,
+        });
+
+        return updatedTransactions;
       });
 
+      const autoMatchedCount = parsedTransactions.filter(
+        (t) => t.isAutoMatched
+      ).length;
+
       toast.success(
-        `Successfully parsed ${parsedTransactions.length} transactions from ${file.name}. ${autoMatchedTransactions.length} transactions auto-matched to categories.`
+        `Successfully parsed ${parsedTransactions.length} transactions from ${
+          file.name
+        }. ${autoMatchedCount} transactions auto-matched to categories.${
+          isEditMode
+            ? ` Total: ${
+                transactions.length + parsedTransactions.length
+              } transactions.`
+            : ""
+        }`
       );
     } catch (error) {
       console.error("Error parsing file:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to parse file"
       );
-      setTransactions([]);
-      setFileStats(null);
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -628,34 +703,81 @@ const ExpenseDetailsPage: React.FC = () => {
     [categories]
   );
 
-  const handleRemoveTransaction = useCallback((transactionId: string) => {
-    setTransactions((prev) => {
-      const filtered = prev.filter((t) => t.id !== transactionId);
+  const handleRemoveTransaction = useCallback(
+    (transactionId: string) => {
+      // Don't allow removal of existing transactions in edit mode
+      if (isEditMode && !transactionId.startsWith("temp_")) {
+        toast.error(
+          "Cannot remove existing transactions. Only new transactions can be removed."
+        );
+        return;
+      }
 
-      // Recalculate stats
-      if (filtered.length > 0) {
-        const validTransactions = filtered.filter((t) => t.isValid);
-        const autoMatchedTransactions = filtered.filter((t) => t.isAutoMatched);
-        const totalAmount = validTransactions.reduce(
+      setTransactions((prev) => {
+        const filtered = prev.filter((t) => t.id !== transactionId);
+
+        // Recalculate stats
+        if (filtered.length > 0) {
+          const validTransactions = filtered.filter((t) => t.isValid);
+          const autoMatchedTransactions = filtered.filter(
+            (t) => t.isAutoMatched
+          );
+          const totalAmount = validTransactions.reduce(
+            (sum, t) => sum + t.amount,
+            0
+          );
+
+          setFileStats({
+            totalRows: filtered.length,
+            validRows: validTransactions.length,
+            invalidRows: filtered.length - validTransactions.length,
+            totalAmount,
+            autoMatchedRows: autoMatchedTransactions.length,
+          });
+        } else {
+          setFileStats(null);
+        }
+
+        return filtered;
+      });
+      toast.success("Transaction removed");
+    },
+    [isEditMode]
+  );
+
+  const handleClearTransactions = () => {
+    if (isEditMode) {
+      // In edit mode, only clear new (temp) transactions
+      const existingTransactions = transactions.filter(
+        (t) => !t.id.startsWith("temp_")
+      );
+      setTransactions(existingTransactions);
+
+      if (existingTransactions.length > 0) {
+        const totalAmount = existingTransactions.reduce(
           (sum, t) => sum + t.amount,
           0
         );
-
         setFileStats({
-          totalRows: filtered.length,
-          validRows: validTransactions.length,
-          invalidRows: filtered.length - validTransactions.length,
+          totalRows: existingTransactions.length,
+          validRows: existingTransactions.length,
+          invalidRows: 0,
           totalAmount,
-          autoMatchedRows: autoMatchedTransactions.length,
+          autoMatchedRows: 0,
         });
       } else {
         setFileStats(null);
       }
 
-      return filtered;
-    });
-    toast.success("Transaction removed");
-  }, []);
+      toast.success("New transactions cleared");
+    } else {
+      // In new mode, clear everything
+      setTransactions([]);
+      setFileStats(null);
+      toast.success("All transactions cleared");
+    }
+    setUploadedFileName("");
+  };
 
   const handleSaveExpenses = async () => {
     const validTransactions = transactions.filter(
@@ -669,7 +791,7 @@ const ExpenseDetailsPage: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // Prepare transactions for insertion
+      // Prepare transactions for insertion - only save new temporary transactions
       const newTransactions = validTransactions
         .filter((t) => t.id.startsWith("temp_")) // Only save new temporary transactions
         .map((t) => ({
@@ -679,7 +801,7 @@ const ExpenseDetailsPage: React.FC = () => {
           amount: t.amount,
           category_id: t.category_id,
           // You can add a notes field here to track the session/group if needed
-          notes: expenseId ? `Batch: ${expenseId}` : null,
+          notes: id ? `Batch: ${id}` : null,
         }));
 
       if (newTransactions.length > 0) {
@@ -859,12 +981,29 @@ const ExpenseDetailsPage: React.FC = () => {
       cell: ({ row }) => {
         const transaction = row.original;
         const categoryOptions = getCategoryOptions();
+        const isExisting = !transaction.id.startsWith("temp_");
 
         if (!transaction.isValid) {
           return (
             <div className="flex items-center gap-2 text-red-600">
               <AlertCircle className="w-4 h-4" />
               <span className="text-sm">Invalid data</span>
+            </div>
+          );
+        }
+
+        // Show category name for existing transactions (read-only)
+        if (isEditMode && isExisting) {
+          return (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                {transaction.category_name || "No category"}
+              </span>
+              {transaction.category_name && (
+                <span className="text-xs text-gray-500">
+                  ({transaction.bucket})
+                </span>
+              )}
             </div>
           );
         }
@@ -902,6 +1041,7 @@ const ExpenseDetailsPage: React.FC = () => {
         const isValid = row.getValue("isValid") as boolean;
         const errors = row.original.errors;
         const hasCategory = !!row.original.category_id;
+        const isExisting = !row.original.id.startsWith("temp_");
 
         if (!isValid) {
           return (
@@ -910,6 +1050,15 @@ const ExpenseDetailsPage: React.FC = () => {
               <span className="text-sm" title={errors.join(", ")}>
                 Invalid
               </span>
+            </div>
+          );
+        }
+
+        if (isEditMode && isExisting) {
+          return (
+            <div className="flex items-center gap-2 text-blue-600">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-sm">Existing</span>
             </div>
           );
         }
@@ -941,7 +1090,7 @@ const ExpenseDetailsPage: React.FC = () => {
 
         // Don't allow removal of existing transactions in edit mode
         if (isEditMode && isExisting) {
-          return <span className="text-xs text-gray-500 px-2">Existing</span>;
+          return <span className="text-xs text-gray-500 px-2">Protected</span>;
         }
 
         return (
@@ -959,11 +1108,15 @@ const ExpenseDetailsPage: React.FC = () => {
     },
   ];
 
-  if (isLoadingCategories) {
+  if (isLoadingCategories || isLoadingExistingTransactions) {
     return (
       <Page
         title={isEditMode ? "Add to Expense" : "Import Expenses"}
-        subTitle="Loading categories and payees..."
+        subTitle={
+          isLoadingCategories
+            ? "Loading categories and payees..."
+            : "Loading existing transactions..."
+        }
       >
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -989,11 +1142,17 @@ const ExpenseDetailsPage: React.FC = () => {
               <AlertCircle className="w-5 h-5 text-blue-600" />
               <div>
                 <h3 className="text-sm font-semibold text-blue-800">
-                  Adding to Expense Group: {expenseId}
+                  Adding to Expense Group: {id}
                 </h3>
                 <p className="text-xs text-blue-600 mt-1">
-                  New transactions will be tagged with this expense group
-                  identifier.
+                  {transactions.filter((t) => !t.id.startsWith("temp_")).length}{" "}
+                  existing transaction
+                  {transactions.filter((t) => !t.id.startsWith("temp_"))
+                    .length === 1
+                    ? ""
+                    : "s"}{" "}
+                  loaded. New transactions will be tagged with this expense
+                  group identifier.
                 </p>
               </div>
             </div>
@@ -1166,12 +1325,8 @@ const ExpenseDetailsPage: React.FC = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setTransactions([]);
-                    setFileStats(null);
-                    setUploadedFileName("");
-                  }}
-                  title="Clear All"
+                  onClick={handleClearTransactions}
+                  title={isEditMode ? "Clear New Transactions" : "Clear All"}
                   icon={<X />}
                 />
                 <Button
@@ -1192,14 +1347,14 @@ const ExpenseDetailsPage: React.FC = () => {
                             (t) =>
                               t.isValid &&
                               t.category_id &&
-                              (isEditMode ? t.id.startsWith("temp_") : true)
+                              t.id.startsWith("temp_")
                           ).length
-                        } ${isEditMode ? "New " : ""}Transaction${
+                        } New Transaction${
                           transactions.filter(
                             (t) =>
                               t.isValid &&
                               t.category_id &&
-                              (isEditMode ? t.id.startsWith("temp_") : true)
+                              t.id.startsWith("temp_")
                           ).length === 1
                             ? ""
                             : "s"
@@ -1219,10 +1374,25 @@ const ExpenseDetailsPage: React.FC = () => {
                     <AlertCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">
                       {
-                        transactions.filter((t) => t.isValid && t.category_id)
-                          .length
+                        transactions.filter(
+                          (t) =>
+                            t.isValid &&
+                            t.category_id &&
+                            t.id.startsWith("temp_")
+                        ).length
                       }{" "}
-                      transactions ready to save
+                      new transactions ready to save
+                      {isEditMode && (
+                        <span className="ml-2 text-gray-700">
+                          (
+                          {
+                            transactions.filter(
+                              (t) => !t.id.startsWith("temp_")
+                            ).length
+                          }{" "}
+                          existing transactions)
+                        </span>
+                      )}
                       {fileStats && fileStats.autoMatchedRows > 0 && (
                         <span className="ml-2 text-green-700">
                           ({fileStats.autoMatchedRows} auto-matched from your
@@ -1234,6 +1404,8 @@ const ExpenseDetailsPage: React.FC = () => {
                   <div className="text-xs text-blue-600 mt-1">
                     Assign categories to valid transactions before saving.
                     Invalid transactions will be ignored.
+                    {isEditMode &&
+                      " Existing transactions are protected from changes."}
                   </div>
                 </div>
               </div>
@@ -1282,6 +1454,13 @@ const ExpenseDetailsPage: React.FC = () => {
                   to match "Date", "Payee", "Merchant", "Description", "Amount",
                   "Debit", etc.
                 </p>
+                {isEditMode && (
+                  <p className="mt-1">
+                    <strong>Edit Mode:</strong> Existing transactions are
+                    protected and cannot be modified or removed. Only new
+                    transactions can be added, edited, or removed.
+                  </p>
+                )}
               </div>
             </div>
           }

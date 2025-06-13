@@ -13,11 +13,11 @@ import BorrowingListing from "@/pages/borrowing/listings";
 import GoalDetails from "@/pages/goals/details";
 import GoalsListing from "@/pages/goals/listings";
 import Category from "@/pages/category/details";
-// import IncomeDetails from "@/pages/enhancedincome/details/details";
 import IncomeManagement from "@/pages/income/listings";
 import IncomeForm from "@/pages/income/details";
 import CategoryAllocation from "@/pages/income/categoryallocation";
-import ExpenseDetails from "@/pages/expense/details";
+import ExpenseDetails from "@/pages/expenses/details/details";
+import ExpenseListing from "@/pages/expenses/listings";
 
 const AppRoutes = () => {
   return (
@@ -34,9 +34,9 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<>Overview</>} />
-        {/* <Route path="income" element={<IncomeDetails />} /> */}
         <Route path="income" element={<IncomeManagement />} />
-        <Route path="expenses" element={<ExpenseDetails />} />
+        <Route path="expenses" element={<ExpenseListing />} />
+        <Route path="expenses/create" element={<ExpenseDetails />} />
         <Route path="expenses/:id" element={<ExpenseDetails />} />
         <Route path="income/create" element={<IncomeForm />} />
         <Route path="income/:id" element={<IncomeForm />} />

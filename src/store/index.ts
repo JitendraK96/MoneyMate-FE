@@ -6,6 +6,7 @@ import emiDetailsReducer from "./slices/emiDetailsSlice";
 import reminderReducer from "./slices/reminderSlice";
 import borrowingReducer from "./slices/borrowingSlice";
 import goalReducer from "./slices/goalSlice";
+import expensesReducer from "./slices/expensesSlice";
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     reminder: reminderReducer,
     borrowing: borrowingReducer,
     goal: goalReducer,
+    expenses: expensesReducer,
   },
 });
 
