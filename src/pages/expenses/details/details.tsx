@@ -106,7 +106,7 @@ const CreateExpenseSheet = () => {
   const [existingTransactions, setExistingTransactions] = useState<
     TransactionWithDetails[]
   >([]);
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [currentExpenseSheet, setCurrentExpenseSheet] =
     useState<ExpenseSheet | null>(null);
   const [isLoadingSheet, setIsLoadingSheet] = useState(false);
@@ -168,13 +168,12 @@ const CreateExpenseSheet = () => {
 
         setIncomes(incomesData || []);
 
-        // If edit mode, fetch expense sheet data first
+        // If edit mode, fetch expense sheet data and then transactions
         if (isEditMode && id) {
           await fetchExpenseSheet(id);
+          await fetchExistingTransactions(id);
         }
-
-        // Fetch existing transactions
-        await fetchExistingTransactions();
+        // Note: No longer fetching transactions in create mode
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load required data");
@@ -184,35 +183,26 @@ const CreateExpenseSheet = () => {
     fetchData();
   }, [user?.id, isEditMode, id]);
 
-  // Fetch existing transactions
-  const fetchExistingTransactions = async () => {
-    if (!user?.id) return;
+  // Fetch existing transactions - only for edit mode with specific expense sheet
+  const fetchExistingTransactions = async (expenseSheetId?: string) => {
+    if (!user?.id || !isEditMode || !expenseSheetId) return;
 
     setIsLoadingTransactions(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("transactions_with_details")
         .select("*")
         .eq("user_id", user.id)
+        .eq("expense_sheet_id", expenseSheetId)
         .eq("is_active", true)
         .order("transaction_date", { ascending: false });
-
-      // If in edit mode, filter transactions for this expense sheet only
-      if (isEditMode && id) {
-        query = query.eq("expense_sheet_id", id);
-      } else {
-        // If in create mode, limit to recent 50 transactions
-        query = query.limit(50);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
 
       setExistingTransactions(data || []);
     } catch (error) {
       console.error("Error fetching transactions:", error);
-      toast.error("Failed to load existing transactions");
+      toast.error("Failed to load expense sheet transactions");
     } finally {
       setIsLoadingTransactions(false);
     }
@@ -289,8 +279,10 @@ const CreateExpenseSheet = () => {
       `Expense sheet "${name}" ${actionText} with ${validTransactions.length} transactions`
     );
 
-    // Refresh existing transactions
-    await fetchExistingTransactions();
+    // Refresh existing transactions only if in edit mode
+    if (isEditMode) {
+      await fetchExistingTransactions(sheetId);
+    }
 
     navigate(`/dashboard/expense/${sheetId}`);
   };
@@ -303,24 +295,28 @@ const CreateExpenseSheet = () => {
 
   // Handle transaction updated
   const handleTransactionUpdated = () => {
-    fetchExistingTransactions();
+    if (isEditMode && id) {
+      fetchExistingTransactions(id);
+    }
     setSelectedTransaction(null);
     setIsEditModalOpen(false);
   };
 
   // Handle transaction delete
-  const handleDeleteTransaction = async (id: string) => {
+  const handleDeleteTransaction = async (transactionId: string) => {
     try {
       const { error } = await supabase
         .from("transactions")
         .delete()
-        .eq("id", id)
+        .eq("id", transactionId)
         .eq("user_id", user.id);
 
       if (error) throw error;
 
       toast.success("Transaction deleted successfully!");
-      await fetchExistingTransactions();
+      if (isEditMode && id) {
+        await fetchExistingTransactions(id);
+      }
     } catch (error) {
       console.error("Error deleting transaction:", error);
       toast.error("Failed to delete transaction. Please try again.");
@@ -524,58 +520,51 @@ const CreateExpenseSheet = () => {
           }
         />
 
-        {/* Existing Transactions */}
-        <Card
-          title={
-            isEditMode ? "Expense Sheet Transactions" : "Recent Transactions"
-          }
-          headerContent={
-            <div className="flex items-center gap-2">
-              <History
-                size={16}
-                className="text-[var(--content-textsecondary)]"
-              />
-              <span className="text-sm text-[var(--content-textsecondary)]">
-                {isEditMode
-                  ? `Transactions in ${
-                      currentExpenseSheet?.name || "this expense sheet"
-                    }`
-                  : "Your recent transactions across all expense sheets"}
-              </span>
-            </div>
-          }
-          cardContent={
-            <>
-              {existingTransactions.length === 0 && !isLoadingTransactions ? (
-                <div className="text-center py-12">
-                  <div className="text-[var(--content-textsecondary)] mb-4">
-                    <History size={48} className="mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">
-                      {isEditMode
-                        ? "No transactions in this expense sheet"
-                        : "No transactions yet"}
-                    </h3>
-                    <p className="text-sm">
-                      {isEditMode
-                        ? "Upload a file to add transactions to this expense sheet."
-                        : "Upload your first expense sheet to see transactions here."}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <DataTable
-                  data={filteredTransactions}
-                  columns={getTransactionColumns(
-                    handleEditTransaction,
-                    handleDeleteTransaction
-                  )}
-                  onSearch={handleSearch}
-                  loading={isLoadingTransactions}
+        {/* Existing Transactions - Only show in edit mode */}
+        {isEditMode && (
+          <Card
+            title="Expense Sheet Transactions"
+            headerContent={
+              <div className="flex items-center gap-2">
+                <History
+                  size={16}
+                  className="text-[var(--content-textsecondary)]"
                 />
-              )}
-            </>
-          }
-        />
+                <span className="text-sm text-[var(--content-textsecondary)]">
+                  Transactions in{" "}
+                  {currentExpenseSheet?.name || "this expense sheet"}
+                </span>
+              </div>
+            }
+            cardContent={
+              <>
+                {existingTransactions.length === 0 && !isLoadingTransactions ? (
+                  <div className="text-center py-12">
+                    <div className="text-[var(--content-textsecondary)] mb-4">
+                      <History size={48} className="mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">
+                        No transactions in this expense sheet
+                      </h3>
+                      <p className="text-sm">
+                        Upload a file to add transactions to this expense sheet.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <DataTable
+                    data={filteredTransactions}
+                    columns={getTransactionColumns(
+                      handleEditTransaction,
+                      handleDeleteTransaction
+                    )}
+                    onSearch={handleSearch}
+                    loading={isLoadingTransactions}
+                  />
+                )}
+              </>
+            }
+          />
+        )}
 
         {/* Upload Statement Modal */}
         <UploadStatementModal

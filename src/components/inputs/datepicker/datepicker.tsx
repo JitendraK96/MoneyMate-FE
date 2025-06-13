@@ -15,6 +15,8 @@ interface DatePickerProps {
   disabled?: (date: Date) => boolean;
   onChange?: (value: Date | undefined) => void;
   required?: boolean;
+  formInput?: boolean;
+  className?: string;
 }
 
 export default function DatePicker({
@@ -24,6 +26,8 @@ export default function DatePicker({
   disabled,
   onChange,
   required = false,
+  formInput = true,
+  className = "",
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -51,10 +55,73 @@ export default function DatePicker({
   }, [open]);
 
   const handleDateSelect = (date?: Date) => {
-    field.onChange(date);
+    field.onChange?.(date);
     onChange?.(date);
     setOpen(false);
   };
+
+  // Core DatePicker component
+  const DatePickerCore = () => (
+    <div ref={wrapperRef} className={`relative ${className}`}>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setOpen((o) => !o)}
+        className={`
+          w-full
+          !text-[var(--content-textplaceholder)]
+          font-size-small
+          border-[0.5px]
+          !rounded-lg
+          ${formInput ? "pt-5 pb-5" : "py-2"}
+          !bg-[var(--accesscontrol-inputbackground)]
+          !border-[var(--common-inputborder)]
+          focus-visible:ring-[0.5px]
+          ${!formInput ? "text-xs h-auto" : ""}
+        `}
+      >
+        {field.value ? (
+          format(field.value, "dd/MM/yyyy")
+        ) : (
+          <span>{placeholder}</span>
+        )}
+        <CalendarIcon
+          className={`ml-auto ${formInput ? "h-4 w-4" : "h-3 w-3"}`}
+        />
+      </Button>
+
+      {open && (
+        <div
+          ref={calendarRef}
+          className={`
+            absolute
+            ${positionAbove ? "bottom-full mb-2" : "top-full mt-2"}
+            z-50
+            bg-[var(--content-background)]
+            border
+            border-[var(--common-inputborder)]
+            shadow-lg
+            rounded-md
+          `}
+        >
+          <Calendar
+            mode="single"
+            selected={field.value}
+            onSelect={handleDateSelect}
+            disabled={disabled}
+            initialFocus
+            className="text-[var(--content-textprimary)]"
+            captionLayout="dropdown"
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // Return with or without form wrapper based on formInput prop
+  if (!formInput) {
+    return <DatePickerCore />;
+  }
 
   return (
     <FormItem>
@@ -63,59 +130,9 @@ export default function DatePicker({
         {required && <span className="text-[var(--common-error)] ml-1">*</span>}
       </Label>
 
-      <div ref={wrapperRef} className="relative">
-        <FormControl>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen((o) => !o)}
-            className="
-              w-full
-              !text-[var(--content-textplaceholder)]
-              font-size-small
-              border-[0.5px]
-              !rounded-lg
-              pt-5 pb-5
-              !bg-[var(--accesscontrol-inputbackground)]
-              !border-[var(--common-inputborder)]
-              focus-visible:ring-[0.5px]
-            "
-          >
-            {field.value ? (
-              format(field.value, "dd/MM/yyyy")
-            ) : (
-              <span>{placeholder}</span>
-            )}
-            <CalendarIcon className="ml-auto h-4 w-4" />
-          </Button>
-        </FormControl>
-
-        {open && (
-          <div
-            ref={calendarRef}
-            className={`
-              absolute
-              ${positionAbove ? "bottom-full mb-2" : "top-full mt-2"}
-              z-50
-              bg-[var(--content-background)]
-              border
-              border-[var(--common-inputborder)]
-              shadow-lg
-              rounded-md
-            `}
-          >
-            <Calendar
-              mode="single"
-              selected={field.value}
-              onSelect={handleDateSelect}
-              disabled={disabled}
-              initialFocus
-              className="text-[var(--content-textprimary)]"
-              captionLayout="dropdown"
-            />
-          </div>
-        )}
-      </div>
+      <FormControl>
+        <DatePickerCore />
+      </FormControl>
 
       <FormMessage />
     </FormItem>

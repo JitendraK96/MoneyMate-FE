@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/inputs";
-import { Input } from "@/components/inputs";
 import {
   Select,
   SelectContent,
@@ -22,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import DataTable from "@/components/table";
 import {
   Upload,
   FileSpreadsheet,
@@ -30,10 +29,10 @@ import {
   AlertCircle,
   Check,
   Filter,
-  Trash2,
   ArrowLeft,
 } from "lucide-react";
 import { format, parse, isValid as DFisValid } from "date-fns";
+import { getTransactionTableColumns } from "./columnDefs"; // Import the column definitions
 
 interface ParsedTransaction {
   id: string;
@@ -101,115 +100,7 @@ const DATE_FORMATS = [
   { value: "auto", label: "Auto Detect", example: "Let system detect format" },
 ];
 
-// Debounced Transaction Input Component
-const DebouncedTransactionInput = ({
-  transaction,
-  field,
-  onUpdate,
-  type = "text",
-  placeholder,
-}: {
-  transaction: ParsedTransaction;
-  field: keyof ParsedTransaction;
-  onUpdate: (id: string, field: keyof ParsedTransaction, value: any) => void;
-  type?: string;
-  placeholder?: string;
-}) => {
-  const [localValue, setLocalValue] = useState(
-    String(transaction[field] || "")
-  );
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (document.activeElement !== inputRef.current) {
-      setLocalValue(String(transaction[field] || ""));
-    }
-  }, [transaction, field]);
-
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setLocalValue(value);
-
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      debounceRef.current = setTimeout(() => {
-        let processedValue: any = value;
-        if (type === "number") {
-          processedValue = value === "" ? 0 : Number(value);
-        }
-        onUpdate(transaction.id, field, processedValue);
-      }, 300);
-    },
-    [transaction.id, field, onUpdate, type]
-  );
-
-  const handleBlur = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-      }
-
-      const value = e.target.value;
-      let processedValue: any = value;
-      if (type === "number") {
-        processedValue = value === "" ? 0 : Number(value);
-      }
-      onUpdate(transaction.id, field, processedValue);
-    },
-    [transaction.id, field, onUpdate, type]
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
-        if (debounceRef.current) {
-          clearTimeout(debounceRef.current);
-          debounceRef.current = null;
-        }
-
-        const target = e.target as HTMLInputElement;
-        let processedValue: any = target.value;
-        if (type === "number") {
-          processedValue = target.value === "" ? 0 : Number(target.value);
-        }
-        onUpdate(transaction.id, field, processedValue);
-        inputRef.current?.blur();
-      }
-    },
-    [transaction.id, field, onUpdate, type]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <Input
-      ref={inputRef}
-      type={type}
-      field={{
-        value: localValue,
-      }}
-      formInput={false}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      placeholder={placeholder}
-      min={type === "number" ? "0" : undefined}
-      step={type === "number" ? "0.01" : undefined}
-      className="w-full text-xs"
-    />
-  );
-};
+// DebouncedTransactionInput is now imported from transactionColumnDefs
 
 const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
   isOpen,
@@ -240,6 +131,9 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
   const [filterStatus, setFilterStatus] = useState<"all" | "valid" | "invalid">(
     "all"
   );
+
+  // Search state for DataTable
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch categories and payees
   useEffect(() => {
@@ -646,12 +540,39 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
     }
   };
 
-  // Filter transactions
+  // Filter transactions based on status and search
   const filteredTransactions = transactions.filter((transaction) => {
-    if (filterStatus === "valid") return transaction.isValid;
-    if (filterStatus === "invalid") return !transaction.isValid;
-    return true;
+    // Apply status filter
+    let passesStatusFilter: boolean = true;
+    if (filterStatus === "valid") {
+      passesStatusFilter = transaction.isValid;
+    } else if (filterStatus === "invalid") {
+      passesStatusFilter = !transaction.isValid;
+    }
+
+    // Apply search filter
+    let passesSearchFilter: boolean = true;
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      passesSearchFilter =
+        transaction.payee.toLowerCase().includes(searchLower) ||
+        transaction.amount.toString().includes(searchLower) ||
+        transaction.date.includes(searchLower) ||
+        (transaction.category_id &&
+          categories
+            .find((c) => c.id === transaction.category_id)
+            ?.name.toLowerCase()
+            .includes(searchLower)) ||
+        false;
+    }
+
+    return passesStatusFilter && passesSearchFilter;
   });
+
+  // Handle search from DataTable
+  const handleSearch = (search: string) => {
+    setSearchQuery(search.trim());
+  };
 
   // Clear uploaded file
   const clearUploadedFile = () => {
@@ -661,6 +582,7 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
     setSelectedTransactions(new Set());
     setBulkCategoryId("");
     setFilterStatus("all");
+    setSearchQuery("");
   };
 
   // Save functionality
@@ -694,10 +616,23 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
     setSelectedTransactions(new Set());
     setBulkCategoryId("");
     setFilterStatus("all");
+    setSearchQuery("");
   };
 
   const validCount = transactions.filter((t) => t.isValid).length;
   const invalidCount = transactions.filter((t) => !t.isValid).length;
+
+  // Column definitions for DataTable
+  const columns = getTransactionTableColumns({
+    categories,
+    selectedTransactions,
+    onSelectTransaction: handleSelectTransaction,
+    onSelectAll: handleSelectAll,
+    onUpdateTransaction: updateTransaction,
+    onUpdateCategory: updateTransactionCategory,
+    onRemoveTransaction: removeTransaction,
+    filteredTransactions,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -920,139 +855,14 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
                 </div>
               )}
 
-              {/* Transaction Table */}
-              <div className="border rounded-lg overflow-hidden !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                <div className="max-h-96 overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-[var(--content-background)] sticky top-0 border-b">
-                      <tr>
-                        <th className="p-3 text-left">
-                          <Checkbox
-                            checked={
-                              selectedTransactions.size ===
-                                filteredTransactions.length &&
-                              filteredTransactions.length > 0
-                            }
-                            onCheckedChange={handleSelectAll}
-                          />
-                        </th>
-                        <th className="p-3 text-left">Date</th>
-                        <th className="p-3 text-left">Payee</th>
-                        <th className="p-3 text-right">Amount</th>
-                        <th className="p-3 text-left">Category</th>
-                        <th className="p-3 text-center">Status</th>
-                        <th className="p-3 text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredTransactions.map((transaction) => (
-                        <tr
-                          key={transaction.id}
-                          className={`border-b hover:bg-[var(--content-background-hover)] ${
-                            !transaction.isValid
-                              ? "bg-[var(--common-error)]/5"
-                              : ""
-                          } ${
-                            selectedTransactions.has(transaction.id)
-                              ? "bg-[var(--common-brand)]/5"
-                              : ""
-                          }`}
-                        >
-                          <td className="p-3">
-                            <Checkbox
-                              checked={selectedTransactions.has(transaction.id)}
-                              onCheckedChange={(checked) =>
-                                handleSelectTransaction(
-                                  transaction.id,
-                                  checked as boolean
-                                )
-                              }
-                            />
-                          </td>
-                          <td className="p-3">
-                            <DebouncedTransactionInput
-                              transaction={transaction}
-                              field="date"
-                              onUpdate={updateTransaction}
-                              type="date"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <DebouncedTransactionInput
-                              transaction={transaction}
-                              field="payee"
-                              onUpdate={updateTransaction}
-                              placeholder="Payee name"
-                            />
-                          </td>
-                          <td className="p-3 text-right">
-                            <DebouncedTransactionInput
-                              transaction={transaction}
-                              field="amount"
-                              onUpdate={updateTransaction}
-                              type="number"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Select
-                              value={transaction.category_id || ""}
-                              onValueChange={(value) =>
-                                updateTransactionCategory(transaction.id, value)
-                              }
-                            >
-                              <SelectTrigger className="w-full text-xs !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                                {categories.map((category) => (
-                                  <SelectItem
-                                    key={category.id}
-                                    value={category.id}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className="w-3 h-3 rounded-full"
-                                        style={{
-                                          backgroundColor: category.color,
-                                        }}
-                                      />
-                                      {category.name} ({category.bucket})
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="p-3 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              {transaction.isValid ? (
-                                <Check
-                                  size={16}
-                                  className="text-[var(--common-success)]"
-                                />
-                              ) : (
-                                <AlertCircle
-                                  size={16}
-                                  className="text-[var(--common-error)]"
-                                />
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 text-center">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => removeTransaction(transaction.id)}
-                              className="text-[var(--common-error)] hover:bg-[var(--common-error)]/10"
-                              icon={<Trash2 size={14} />}
-                              title="Remove Transaction"
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              {/* DataTable */}
+              <div className="bg-[var(--content)] border border-[var(--common-inputborder)] rounded-lg">
+                <DataTable
+                  data={filteredTransactions}
+                  columns={columns}
+                  onSearch={handleSearch}
+                  searchPlaceholder="Search transactions..."
+                />
               </div>
 
               {/* Auto-Match Info */}
