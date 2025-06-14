@@ -332,6 +332,10 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+.one-column {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 1050px) {
   .two-column {
     grid-template-columns: 1fr;
