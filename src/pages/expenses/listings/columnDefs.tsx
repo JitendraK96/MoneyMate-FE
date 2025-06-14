@@ -1,6 +1,14 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Link2, Unlink } from "lucide-react";
+import {
+  MoreHorizontal,
+  Link2,
+  Unlink,
+  Play,
+  Pause,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { format } from "date-fns";
 import {
   DropdownMenu,
@@ -22,15 +30,9 @@ interface ExpenseSheetRow {
   created_at: string;
   updated_at: string;
   // Summary data from view
-  income_source?: string | null;
-  income_amount?: number | null;
-  income_frequency?: string | null;
   total_transactions: number;
   expense_transactions: number;
-  income_transactions: number;
   total_expenses: number;
-  total_income: number;
-  net_amount: number;
   needs_expenses: number;
   wants_expenses: number;
   savings_expenses: number;
@@ -38,9 +40,105 @@ interface ExpenseSheetRow {
   last_transaction_date?: string | null;
 }
 
+const EXPENSE_BUCKETS = [
+  {
+    key: "needs",
+    label: "Needs",
+    color: "#ef4444",
+    description: "Essential expenses like rent, utilities, groceries",
+  },
+  {
+    key: "wants",
+    label: "Wants",
+    color: "#3b82f6",
+    description: "Entertainment, dining out, hobbies",
+  },
+  {
+    key: "savings",
+    label: "Savings",
+    color: "#22c55e",
+    description: "Emergency fund, investments, debt repayment",
+  },
+] as const;
+
+// Category Breakdown Component
+const CategoryBreakdown = ({
+  expenseSheet,
+}: {
+  expenseSheet: ExpenseSheetRow;
+}) => {
+  const formatCurrency = (amount: number) => {
+    return `₹${amount.toLocaleString("en-IN")}`;
+  };
+
+  const totalCategorized =
+    expenseSheet.needs_expenses +
+    expenseSheet.wants_expenses +
+    expenseSheet.savings_expenses;
+
+  if (totalCategorized === 0) {
+    return (
+      <div className="text-center text-[var(--content-textsecondary)] text-sm py-2">
+        No categorized expenses
+      </div>
+    );
+  }
+
+  const renderBucketSection = (
+    bucketLabel: string,
+    bucketColor: string,
+    bucketAmount: number
+  ) => {
+    if (bucketAmount === 0) {
+      return null;
+    }
+
+    return (
+      <div className="flex items-center justify-between py-1">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full flex-shrink-0"
+            style={{ backgroundColor: bucketColor }}
+          />
+          <span className="text-[var(--content-textprimary)] text-sm">
+            {bucketLabel}: {formatCurrency(bucketAmount)}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-1">
+      {/* Needs Section */}
+      {renderBucketSection(
+        "Needs",
+        EXPENSE_BUCKETS[0].color,
+        expenseSheet.needs_expenses
+      )}
+
+      {/* Wants Section */}
+      {renderBucketSection(
+        "Wants",
+        EXPENSE_BUCKETS[1].color,
+        expenseSheet.wants_expenses
+      )}
+
+      {/* Savings Section */}
+      {renderBucketSection(
+        "Savings",
+        EXPENSE_BUCKETS[2].color,
+        expenseSheet.savings_expenses
+      )}
+    </div>
+  );
+};
+
 export const getColumns = (
   onView: (id: string) => void,
-  onDelete: (id: string) => void
+  onDelete: (id: string) => void,
+  onActivate: (id: string) => void,
+  onDeactivate: (id: string) => void
 ): ColumnDef<ExpenseSheetRow>[] => [
   {
     accessorKey: "name",
@@ -84,45 +182,6 @@ export const getColumns = (
     },
   },
   {
-    accessorKey: "income_source",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="table-heading"
-      >
-        Linked Income
-        <Sort />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const incomeSource = row.original.income_source;
-      const incomeAmount = row.original.income_amount;
-      const incomeFrequency = row.original.income_frequency;
-
-      if (!incomeSource) {
-        return (
-          <div className="text-[var(--content-textsecondary)] text-sm">
-            Not linked
-          </div>
-        );
-      }
-
-      return (
-        <div>
-          <div className="font-medium text-[var(--content-textprimary)]">
-            {incomeSource}
-          </div>
-          {incomeAmount && incomeFrequency && (
-            <div className="text-sm text-[var(--content-textsecondary)]">
-              ₹{incomeAmount.toLocaleString("en-IN")} {incomeFrequency}
-            </div>
-          )}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "total_transactions",
     header: ({ column }) => (
       <Button
@@ -136,19 +195,12 @@ export const getColumns = (
     ),
     cell: ({ row }) => {
       const total = row.original.total_transactions;
-      const expenses = row.original.expense_transactions;
-      const income = row.original.income_transactions;
 
       return (
         <div>
           <div className="font-medium text-[var(--content-textprimary)]">
-            {total} total
+            {total} total transaction
           </div>
-          {total > 0 && (
-            <div className="text-sm text-[var(--content-textsecondary)]">
-              {expenses} expenses, {income} income
-            </div>
-          )}
         </div>
       );
     },
@@ -175,140 +227,113 @@ export const getColumns = (
     },
   },
   {
-    accessorKey: "total_income",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="table-heading"
-      >
-        Total Income
-        <Sort />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const amount = row.getValue("total_income") as number;
-      return (
-        <div className="font-medium text-[var(--common-success)]">
-          ₹{amount?.toLocaleString("en-IN") || "0"}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "net_amount",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="table-heading"
-      >
-        Net Amount
-        <Sort />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const amount = row.getValue("net_amount") as number;
-      const isPositive = amount >= 0;
-
-      return (
-        <div
-          className={`font-medium ${
-            isPositive
-              ? "text-[var(--common-success)]"
-              : "text-[var(--common-error)]"
-          }`}
-        >
-          {isPositive ? "+" : ""}₹{amount?.toLocaleString("en-IN") || "0"}
-        </div>
-      );
-    },
-  },
-  {
     id: "category_breakdown",
-    header: () => <div className="text-center">Category Breakdown</div>,
+    header: () => <div className="text-left">Category Breakdown</div>,
     cell: ({ row }) => {
-      const { needs_expenses, wants_expenses, savings_expenses } = row.original;
-      const totalCategorized =
-        needs_expenses + wants_expenses + savings_expenses;
-
-      if (totalCategorized === 0) {
-        return (
-          <div className="text-center text-[var(--content-textsecondary)] text-sm">
-            No categorized expenses
-          </div>
-        );
-      }
-
-      return (
-        <div className="text-center">
-          <div className="text-sm space-y-1">
-            {needs_expenses > 0 && (
-              <div className="text-[var(--common-error)]">
-                Needs: ₹{needs_expenses.toLocaleString("en-IN")}
-              </div>
-            )}
-            {wants_expenses > 0 && (
-              <div className="text-[var(--common-brand)]">
-                Wants: ₹{wants_expenses.toLocaleString("en-IN")}
-              </div>
-            )}
-            {savings_expenses > 0 && (
-              <div className="text-[var(--common-success)]">
-                Savings: ₹{savings_expenses.toLocaleString("en-IN")}
-              </div>
-            )}
-          </div>
-        </div>
-      );
+      return <CategoryBreakdown expenseSheet={row.original} />;
     },
     enableSorting: false,
   },
   {
-    id: "date_range",
+    id: "average_expense",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="table-heading"
       >
-        Activity Period
+        Avg per Transaction
         <Sort />
       </Button>
     ),
     cell: ({ row }) => {
-      const firstDate = row.original.first_transaction_date;
-      const lastDate = row.original.last_transaction_date;
+      const { total_expenses, expense_transactions } = row.original;
 
-      if (!firstDate || !lastDate) {
+      if (expense_transactions === 0) {
         return (
           <div className="text-[var(--content-textsecondary)] text-sm">
-            No transactions yet
+            No expenses yet
+          </div>
+        );
+      }
+
+      const average = total_expenses / expense_transactions;
+
+      return (
+        <div className="text-sm">
+          <div className="font-medium text-[var(--content-textprimary)]">
+            ₹{Math.round(average).toLocaleString("en-IN")}
+          </div>
+          <div className="text-[var(--content-textsecondary)]">per expense</div>
+        </div>
+      );
+    },
+    sortingFn: (rowA, rowB) => {
+      const avgA =
+        rowA.original.expense_transactions > 0
+          ? rowA.original.total_expenses / rowA.original.expense_transactions
+          : 0;
+      const avgB =
+        rowB.original.expense_transactions > 0
+          ? rowB.original.total_expenses / rowB.original.expense_transactions
+          : 0;
+      return avgA - avgB;
+    },
+  },
+  {
+    id: "last_activity",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="table-heading"
+      >
+        Last Activity
+        <Sort />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const lastDate = row.original.last_transaction_date;
+
+      if (!lastDate) {
+        return (
+          <div className="text-[var(--content-textsecondary)] text-sm">
+            No activity yet
           </div>
         );
       }
 
       try {
-        const first = new Date(firstDate);
-        const last = new Date(lastDate);
-        const isSameDay = first.toDateString() === last.toDateString();
+        const date = new Date(lastDate);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        let timeAgo = "";
+        if (diffDays === 1) {
+          timeAgo = "1 day ago";
+        } else if (diffDays < 30) {
+          timeAgo = `${diffDays} days ago`;
+        } else if (diffDays < 365) {
+          const months = Math.floor(diffDays / 30);
+          timeAgo = months === 1 ? "1 month ago" : `${months} months ago`;
+        } else {
+          const years = Math.floor(diffDays / 365);
+          timeAgo = years === 1 ? "1 year ago" : `${years} years ago`;
+        }
 
         return (
           <div className="text-sm">
             <div className="text-[var(--content-textprimary)]">
-              {format(first, "MMM d, yyyy")}
+              {format(date, "MMM d, yyyy")}
             </div>
-            {!isSameDay && (
-              <div className="text-[var(--content-textsecondary)]">
-                to {format(last, "MMM d, yyyy")}
-              </div>
-            )}
+            <div className="text-[var(--content-textsecondary)]">{timeAgo}</div>
           </div>
         );
       } catch {
         return (
           <div className="text-[var(--content-textsecondary)] text-sm">
-            Invalid dates
+            Invalid date
           </div>
         );
       }
@@ -430,23 +455,41 @@ export const getColumns = (
             className="!bg-[var(--content)] !border-[var(--common-inputborder)]"
           >
             <DropdownMenuItem
-              onClick={() => onView?.(rowData.id)}
-              className="text-[var(--content-textprimary)] font-size-extra-small"
-            >
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
               onClick={() => onView?.(rowData.id)} // You might want a separate edit handler
-              className="text-[var(--content-textprimary)] font-size-extra-small"
+              className="text-[var(--content-textprimary)] font-size-extra-small flex items-center gap-2 cursor-pointer"
             >
+              <Edit size={16} />
               Edit Sheet
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+
+            <DropdownMenuSeparator className="!bg-[var(--common-inputborder)]" />
+
+            {rowData.is_active ? (
+              <DropdownMenuItem
+                onClick={() => onDeactivate(rowData.id)}
+                className="text-[var(--common-warning)] font-size-extra-small flex items-center gap-2 cursor-pointer"
+              >
+                <Pause size={16} />
+                Deactivate Sheet
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onClick={() => onActivate(rowData.id)}
+                className="text-[var(--common-success)] font-size-extra-small flex items-center gap-2 cursor-pointer"
+              >
+                <Play size={16} />
+                Activate Sheet
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuSeparator className="!bg-[var(--common-inputborder)]" />
+
             <DropdownMenuItem
               onClick={() => onDelete(rowData.id)}
-              className="text-[var(--common-error)] font-size-extra-small"
+              className="text-[var(--common-error)] font-size-extra-small flex items-center gap-2 cursor-pointer"
             >
-              Delete
+              <Trash2 size={16} />
+              Delete Permanently
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

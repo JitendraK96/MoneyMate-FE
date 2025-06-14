@@ -211,22 +211,6 @@ export const getTransactionColumns = (
     },
   },
   {
-    id: "type",
-    header: () => <div>Type</div>,
-    cell: ({ row }) => {
-      const type = row.original.transaction_type;
-      return (
-        <Badge
-          variant={type === "expense" ? "destructive" : "default"}
-          className="text-xs"
-        >
-          {type === "expense" ? "Expense" : "Income"}
-        </Badge>
-      );
-    },
-    enableSorting: false,
-  },
-  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {

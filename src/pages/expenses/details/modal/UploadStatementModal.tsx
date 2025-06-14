@@ -5,34 +5,34 @@ import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Dialog from "@/components/dialog";
 import { Button } from "@/components/inputs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import GenericFormSelect from "@/components/select";
 import { Badge } from "@/components/ui/badge";
 import DataTable from "@/components/table";
+import { Form, FormField } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import {
   Upload,
   FileSpreadsheet,
   Save,
   AlertCircle,
-  Check,
-  Filter,
   ArrowLeft,
 } from "lucide-react";
 import { format, parse, isValid as DFisValid } from "date-fns";
 import { getTransactionTableColumns } from "./columnDefs"; // Import the column definitions
+
+// Validation Schema
+const UploadFormSchema = z.object({
+  dateFormat: z.string().min(1, { message: "Please select a date format." }),
+  filterStatus: z.enum(["all", "valid", "invalid"]).optional(),
+  bulkCategoryId: z.string().optional(),
+});
+
+type UploadFormData = z.infer<typeof UploadFormSchema>;
 
 interface ParsedTransaction {
   id: string;
@@ -68,39 +68,44 @@ interface UploadStatementModalProps {
 // Date format options
 const DATE_FORMATS = [
   {
-    value: "yyyy-MM-dd",
+    id: "yyyy-MM-dd",
     label: "YYYY-MM-DD (2025-01-15)",
     example: "2025-01-15",
   },
   {
-    value: "MM/dd/yyyy",
+    id: "MM/dd/yyyy",
     label: "MM/DD/YYYY (01/15/2025)",
     example: "01/15/2025",
   },
   {
-    value: "dd/MM/yyyy",
+    id: "dd/MM/yyyy",
     label: "DD/MM/YYYY (15/01/2025)",
     example: "15/01/2025",
   },
   {
-    value: "MM-dd-yyyy",
+    id: "MM-dd-yyyy",
     label: "MM-DD-YYYY (01-15-2025)",
     example: "01-15-2025",
   },
   {
-    value: "dd-MM-yyyy",
+    id: "dd-MM-yyyy",
     label: "DD-MM-YYYY (15-01-2025)",
     example: "15-01-2025",
   },
   {
-    value: "yyyy/MM/dd",
+    id: "yyyy/MM/dd",
     label: "YYYY/MM/DD (2025/01/15)",
     example: "2025/01/15",
   },
-  { value: "auto", label: "Auto Detect", example: "Let system detect format" },
+  { id: "auto", label: "Auto Detect", example: "Let system detect format" },
 ];
 
-// DebouncedTransactionInput is now imported from transactionColumnDefs
+// Filter status options
+const FILTER_OPTIONS = [
+  { id: "all", name: "All" },
+  { id: "valid", name: "Valid only" },
+  { id: "invalid", name: "Invalid only" },
+];
 
 const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
   isOpen,
@@ -111,8 +116,26 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
 }) => {
   const { user } = useUser();
 
+  // Form setup
+  const form = useForm<UploadFormData>({
+    resolver: zodResolver(UploadFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    criteriaMode: "all",
+    shouldFocusError: true,
+    defaultValues: {
+      dateFormat: "auto",
+      filterStatus: "all",
+      bulkCategoryId: "",
+    },
+  });
+
+  const { watch, setValue } = form;
+  const dateFormat = watch("dateFormat");
+  const filterStatus = watch("filterStatus") || "all";
+  const bulkCategoryId = watch("bulkCategoryId") || "";
+
   // File upload states
-  const [dateFormat, setDateFormat] = useState("auto");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
@@ -126,10 +149,6 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
   // Preview states
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(
     new Set()
-  );
-  const [bulkCategoryId, setBulkCategoryId] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "valid" | "invalid">(
-    "all"
   );
 
   // Search state for DataTable
@@ -533,7 +552,7 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
         updateTransactionCategory(id, bulkCategoryId);
       });
       setSelectedTransactions(new Set());
-      setBulkCategoryId("");
+      setValue("bulkCategoryId", "");
       toast.success(
         `Category assigned to ${selectedTransactions.size} transactions`
       );
@@ -580,8 +599,8 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
     setTransactions([]);
     setShowPreview(false);
     setSelectedTransactions(new Set());
-    setBulkCategoryId("");
-    setFilterStatus("all");
+    setValue("bulkCategoryId", "");
+    setValue("filterStatus", "all");
     setSearchQuery("");
   };
 
@@ -607,15 +626,19 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
 
   const handleClose = () => {
     clearUploadedFile();
-    setDateFormat("auto");
+    form.reset({
+      dateFormat: "auto",
+      filterStatus: "all",
+      bulkCategoryId: "",
+    });
     onClose();
   };
 
   const handleBackToUpload = () => {
     setShowPreview(false);
     setSelectedTransactions(new Set());
-    setBulkCategoryId("");
-    setFilterStatus("all");
+    setValue("bulkCategoryId", "");
+    setValue("filterStatus", "all");
     setSearchQuery("");
   };
 
@@ -634,324 +657,306 @@ const UploadStatementModal: React.FC<UploadStatementModalProps> = ({
     filteredTransactions,
   });
 
+  // Prepare categories with formatted display
+  const categoryOptionsWithDisplay = categories.map((category) => ({
+    ...category,
+    displayName: `${category.name} (${category.bucket})`,
+  }));
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="!bg-[var(--content)] !border-[var(--common-inputborder)] min-w-6xl h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="text-[var(--content-textprimary)]">
-            {showPreview ? "Transaction Preview" : "Upload Statement"} -{" "}
-            {expenseSheetName}
-          </DialogTitle>
-          <DialogDescription className="text-[var(--content-textsecondary)]">
-            {showPreview ? (
-              <>
-                Review and edit {transactions.length} imported transactions
-                before saving to your expense sheet.
-                {isLinkedToIncome &&
-                  " This sheet is linked to an income source."}
-              </>
-            ) : (
-              "Upload your bank statement or expense file to automatically import transactions."
-            )}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 overflow-y-auto flex-1">
-          {!showPreview ? (
-            // Upload Section
-            <>
-              {/* Date Format Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--content-textprimary)]">
-                  Excel Date Format *
-                </label>
-                <Select
-                  value={dateFormat}
-                  onValueChange={(value) => {
-                    setDateFormat(value);
-                    if (uploadedFile) {
-                      clearUploadedFile();
-                    }
-                  }}
-                >
-                  <SelectTrigger className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                    <SelectValue placeholder="Select date format used in your Excel" />
-                  </SelectTrigger>
-                  <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                    {DATE_FORMATS.map((format) => (
-                      <SelectItem key={format.value} value={format.value}>
-                        <div className="flex flex-col">
-                          <span>{format.label}</span>
-                          <span className="text-xs text-[var(--content-textsecondary)]">
-                            {format.example}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+    <Dialog
+      isOpen={isOpen}
+      handleClose={handleClose}
+      title={`${
+        showPreview ? "Transaction Preview" : "Upload Statement"
+      } - ${expenseSheetName}`}
+      description={
+        showPreview ? (
+          <>
+            Review and edit {transactions.length} imported transactions before
+            saving to your expense sheet.
+            {isLinkedToIncome && " This sheet is linked to an income source."}
+          </>
+        ) : (
+          "Upload your bank statement or expense file to automatically import transactions."
+        )
+      }
+      maxWidth="min-w-6xl"
+    >
+      <div className="space-y-4 overflow-y-auto flex-1">
+        {!showPreview ? (
+          <>
+            <Form {...form}>
+              <div className="form-wrapper">
+                <FormField
+                  control={form.control}
+                  name="dateFormat"
+                  render={({ field }) => (
+                    <GenericFormSelect
+                      field={{
+                        ...field,
+                        onChange: (value: string) => {
+                          field.onChange(value);
+                          if (uploadedFile) {
+                            clearUploadedFile();
+                          }
+                        },
+                      }}
+                      options={DATE_FORMATS}
+                      displayKey="label"
+                      label="Excel Date Format"
+                      placeholder="Select date format used in your Excel"
+                      fieldName="dateFormat"
+                      required={true}
+                    />
+                  )}
+                />
               </div>
+            </Form>
 
-              {/* File Upload */}
-              <div className="space-y-4">
-                {!dateFormat && (
-                  <div className="p-3 bg-[var(--common-warning)]/10 rounded-lg">
-                    <p className="text-sm text-[var(--content-textprimary)]">
-                      ⚠️ Please select a date format above before uploading your
-                      file
+            {/* File Upload */}
+            <div className="space-y-4">
+              {!dateFormat && (
+                <div className="p-3 bg-[var(--common-warning)]/10 rounded-lg">
+                  <p className="text-sm text-[var(--content-textprimary)]">
+                    ⚠️ Please select a date format above before uploading your
+                    file
+                  </p>
+                </div>
+              )}
+
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  isDragActive
+                    ? "border-[var(--common-brand)] bg-[var(--common-brand)]/10"
+                    : "border-[var(--common-inputborder)] hover:border-[var(--common-brand)]"
+                } ${!dateFormat ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <input {...getInputProps()} />
+                {isProcessing ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--common-brand)]"></div>
+                    <p className="text-[var(--content-textsecondary)]">
+                      Processing file...
                     </p>
                   </div>
-                )}
-
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    isDragActive
-                      ? "border-[var(--common-brand)] bg-[var(--common-brand)]/10"
-                      : "border-[var(--common-inputborder)] hover:border-[var(--common-brand)]"
-                  } ${!dateFormat ? "opacity-50 pointer-events-none" : ""}`}
-                >
-                  <input {...getInputProps()} />
-                  {isProcessing ? (
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--common-brand)]"></div>
-                      <p className="text-[var(--content-textsecondary)]">
-                        Processing file...
+                ) : (
+                  <div className="flex flex-col items-center gap-4">
+                    <Upload
+                      size={48}
+                      className="text-[var(--content-textsecondary)]"
+                    />
+                    <div>
+                      <p className="text-lg font-medium text-[var(--content-textprimary)]">
+                        {isDragActive
+                          ? "Drop the file here"
+                          : "Drag & drop your Excel file here"}
+                      </p>
+                      <p className="text-sm text-[var(--content-textsecondary)]">
+                        or click to browse (Excel, CSV files)
                       </p>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-4">
-                      <Upload
-                        size={48}
-                        className="text-[var(--content-textsecondary)]"
-                      />
-                      <div>
-                        <p className="text-lg font-medium text-[var(--content-textprimary)]">
-                          {isDragActive
-                            ? "Drop the file here"
-                            : "Drag & drop your Excel file here"}
+                    <div className="text-xs text-[var(--content-textsecondary)] space-y-1">
+                      <p>Expected columns: Date, Payee/Description, Amount</p>
+                      <p>Supported formats: .xlsx, .xls, .csv</p>
+                      <p>
+                        💡 Categories will be auto-assigned based on existing
+                        payee matches
+                      </p>
+                      {dateFormat && dateFormat !== "auto" && (
+                        <p className="text-[var(--common-brand)]">
+                          Using date format:{" "}
+                          {DATE_FORMATS.find((f) => f.id === dateFormat)?.label}
                         </p>
-                        <p className="text-sm text-[var(--content-textsecondary)]">
-                          or click to browse (Excel, CSV files)
-                        </p>
-                      </div>
-                      <div className="text-xs text-[var(--content-textsecondary)] space-y-1">
-                        <p>Expected columns: Date, Payee/Description, Amount</p>
-                        <p>Supported formats: .xlsx, .xls, .csv</p>
-                        <p>
-                          💡 Categories will be auto-assigned based on existing
-                          payee matches
-                        </p>
-                        {dateFormat && dateFormat !== "auto" && (
-                          <p className="text-[var(--common-brand)]">
-                            Using date format:{" "}
-                            {
-                              DATE_FORMATS.find((f) => f.value === dateFormat)
-                                ?.label
-                            }
-                          </p>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {uploadedFile && (
-                  <div className="flex items-center gap-2 p-3 bg-[var(--common-success)]/10 rounded-lg">
-                    <FileSpreadsheet
-                      size={16}
-                      className="text-[var(--common-success)]"
-                    />
-                    <span className="text-sm text-[var(--content-textprimary)]">
-                      {uploadedFile.name}
-                    </span>
-                    <Badge variant="secondary" className="ml-auto">
-                      {uploadedFile.size > 1024 * 1024
-                        ? `${(uploadedFile.size / (1024 * 1024)).toFixed(1)} MB`
-                        : `${(uploadedFile.size / 1024).toFixed(1)} KB`}
-                    </Badge>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={clearUploadedFile}
-                      title="Clear File"
-                      className="text-[var(--common-error)] hover:bg-[var(--common-error)]/10"
-                    />
                   </div>
                 )}
               </div>
-            </>
-          ) : (
-            // Preview Section
-            <>
-              {/* Back Button and Stats */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+
+              {uploadedFile && (
+                <div className="flex items-center gap-2 p-3 bg-[var(--common-success)]/10 rounded-lg">
+                  <FileSpreadsheet
+                    size={16}
+                    className="text-[var(--common-success)]"
+                  />
+                  <span className="text-sm text-[var(--content-textprimary)]">
+                    {uploadedFile.name}
+                  </span>
+                  <Badge variant="secondary" className="ml-auto">
+                    {uploadedFile.size > 1024 * 1024
+                      ? `${(uploadedFile.size / (1024 * 1024)).toFixed(1)} MB`
+                      : `${(uploadedFile.size / 1024).toFixed(1)} KB`}
+                  </Badge>
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={handleBackToUpload}
-                    icon={<ArrowLeft />}
-                    title="Back to Upload"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{validCount} valid</Badge>
-                    {invalidCount > 0 && (
-                      <Badge variant="destructive">
-                        {invalidCount} invalid
-                      </Badge>
-                    )}
-                  </div>
-                  <Select
-                    value={filterStatus}
-                    onValueChange={(value: any) => setFilterStatus(value)}
-                  >
-                    <SelectTrigger className="w-32 !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                      <Filter size={14} />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="valid">Valid only</SelectItem>
-                      <SelectItem value="invalid">Invalid only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Bulk Actions */}
-              {selectedTransactions.size > 0 && (
-                <div className="flex items-center gap-4 p-3 bg-[var(--common-brand)]/10 rounded-lg">
-                  <span className="text-sm font-medium">
-                    {selectedTransactions.size} selected
-                  </span>
-                  <Select
-                    value={bulkCategoryId}
-                    onValueChange={setBulkCategoryId}
-                  >
-                    <SelectTrigger className="w-48 !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                      <SelectValue placeholder="Assign category" />
-                    </SelectTrigger>
-                    <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: category.color }}
-                            />
-                            {category.name} ({category.bucket})
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    onClick={handleBulkCategoryUpdate}
-                    disabled={!bulkCategoryId}
-                    title="Apply to Selected"
+                    onClick={clearUploadedFile}
+                    title="Clear File"
+                    className="w-fit"
                   />
                 </div>
               )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Back Button and Stats */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 justify-between w-full">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleBackToUpload}
+                  icon={<ArrowLeft />}
+                  title="Back to Upload"
+                  className="w-fit"
+                />
+                <Form {...form}>
+                  <div className="w-fit">
+                    <FormField
+                      control={form.control}
+                      name="filterStatus"
+                      render={({ field }) => (
+                        <GenericFormSelect
+                          label=""
+                          field={field}
+                          options={FILTER_OPTIONS}
+                          displayKey="name"
+                          placeholder="Filter"
+                          fieldName="filterStatus"
+                          required={false}
+                        />
+                      )}
+                    />
+                  </div>
+                </Form>
+              </div>
+            </div>
 
-              {/* DataTable */}
-              <div className="bg-[var(--content)] border border-[var(--common-inputborder)] rounded-lg">
-                <DataTable
-                  data={filteredTransactions}
-                  columns={columns}
-                  onSearch={handleSearch}
-                  searchPlaceholder="Search transactions..."
+            {/* Bulk Actions */}
+            {selectedTransactions.size > 0 && (
+              <div className="flex items-center gap-4 p-3 bg-[var(--common-brand)]/10 rounded-lg justify-between">
+                <Form {...form}>
+                  <div className="w-48">
+                    <FormField
+                      control={form.control}
+                      name="bulkCategoryId"
+                      render={({ field }) => (
+                        <GenericFormSelect
+                          field={field}
+                          options={categoryOptionsWithDisplay}
+                          displayKey="displayName"
+                          placeholder="Assign category"
+                          fieldName="bulkCategory"
+                          required={false}
+                        />
+                      )}
+                    />
+                  </div>
+                </Form>
+                <Button
+                  type="button"
+                  onClick={handleBulkCategoryUpdate}
+                  disabled={!bulkCategoryId}
+                  title="Apply to Selected"
+                  className="w-fit"
                 />
               </div>
+            )}
 
-              {/* Auto-Match Info */}
-              {(() => {
-                const autoMatchedCount = transactions.filter(
-                  (t) =>
-                    t.category_id &&
-                    payees.some(
-                      (p) =>
-                        p.category_id === t.category_id &&
-                        (t.payee.toLowerCase().includes(p.name.toLowerCase()) ||
-                          p.name.toLowerCase().includes(t.payee.toLowerCase()))
-                    )
-                ).length;
-                return autoMatchedCount > 0 ? (
-                  <div className="p-4 bg-[var(--common-success)]/10 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <Check
-                        size={20}
-                        className="text-[var(--common-success)] mt-0.5"
-                      />
-                      <div>
-                        <h4 className="font-medium text-[var(--content-textprimary)] mb-2">
-                          {autoMatchedCount} transactions automatically
-                          categorized
-                        </h4>
-                        <p className="text-sm text-[var(--content-textsecondary)]">
-                          Categories were assigned based on matching payee names
-                          in your existing payees list. You can review and
-                          change these assignments before saving.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null;
-              })()}
+            {/* DataTable */}
+            <div className="bg-[var(--content)] rounded-lg">
+              <DataTable
+                data={filteredTransactions}
+                columns={columns}
+                onSearch={handleSearch}
+                searchPlaceholder="Search transactions..."
+              />
+            </div>
 
-              {/* Error Summary */}
-              {invalidCount > 0 && (
-                <div className="p-4 bg-[var(--common-warning)]/10 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle
-                      size={20}
-                      className="text-[var(--common-warning)] mt-0.5"
-                    />
-                    <div>
-                      <h4 className="font-medium text-[var(--content-textprimary)] mb-2">
-                        {invalidCount} transactions have errors
-                      </h4>
-                      <p className="text-sm text-[var(--content-textsecondary)]">
-                        These transactions won't be saved. Please fix the errors
-                        or remove them.
-                      </p>
-                    </div>
+            <Separator className="bg-[var(--content-textplaceholder)]" />
+
+            {/* Auto-Match Info */}
+            {(() => {
+              const autoMatchedCount = transactions.filter(
+                (t) =>
+                  t.category_id &&
+                  payees.some(
+                    (p) =>
+                      p.category_id === t.category_id &&
+                      (t.payee.toLowerCase().includes(p.name.toLowerCase()) ||
+                        p.name.toLowerCase().includes(t.payee.toLowerCase()))
+                  )
+              ).length;
+              return autoMatchedCount > 0 ? (
+                <div className="flex items-start gap-3">
+                  <div>
+                    <h4 className="font-size-small text-[var(--content-textprimary)]">
+                      {autoMatchedCount} transactions automatically categorized
+                    </h4>
+                    <p className="font-size-extra-small text-[var(--content-textplaceholder)]">
+                      Categories were assigned based on matching payee names in
+                      your existing payees list. You can review and change these
+                      assignments before saving.
+                    </p>
                   </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              ) : null;
+            })()}
 
-        {/* Footer Actions */}
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-[var(--content-textsecondary)]">
-            {showPreview
-              ? `${validCount} of ${transactions.length} transactions ready to save`
-              : "Select date format and upload your file to get started"}
-          </div>
-          <div className="flex gap-2">
+            {/* Error Summary */}
+            {invalidCount > 0 && (
+              <div className="p-4 bg-[var(--common-warning)]/10 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle
+                    size={20}
+                    className="text-[var(--common-warning)] mt-0.5"
+                  />
+                  <div>
+                    <h4 className="font-medium text-[var(--content-textprimary)] mb-2">
+                      {invalidCount} transactions have errors
+                    </h4>
+                    <p className="text-sm text-[var(--content-textsecondary)]">
+                      These transactions won't be saved. Please fix the errors
+                      or remove them.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Footer Actions */}
+      <div className="flex justify-between items-center pt-4">
+        <div className="font-size-extra-small text-[var(--content-textsecondary)]">
+          {showPreview
+            ? `${validCount} of ${transactions.length} transactions ready to save`
+            : "Select date format and upload your file to get started"}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            title="Cancel"
+            className="w-fit"
+          />
+          {showPreview && (
             <Button
               type="button"
-              variant="secondary"
-              onClick={handleClose}
-              title="Cancel"
+              onClick={handleSave}
+              disabled={isSaving || validCount === 0}
+              icon={isSaving ? undefined : <Save />}
+              title={isSaving ? "Saving..." : "Save Transactions"}
               className="w-fit"
             />
-            {showPreview && (
-              <Button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaving || validCount === 0}
-                icon={isSaving ? undefined : <Save />}
-                title={isSaving ? "Saving..." : "Save Transactions"}
-                className="w-fit"
-              />
-            )}
-          </div>
+          )}
         </div>
-      </DialogContent>
+      </div>
     </Dialog>
   );
 };

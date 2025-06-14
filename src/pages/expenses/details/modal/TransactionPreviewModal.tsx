@@ -3,26 +3,26 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Dialog from "@/components/dialog";
 import { Button } from "@/components/inputs";
 import { Input } from "@/components/inputs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import GenericFormSelect from "@/components/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Save, AlertCircle, Check, Filter, Trash2 } from "lucide-react";
+import { Form, FormField } from "@/components/ui/form";
+import { Save, AlertCircle, Check, Trash2 } from "lucide-react";
 import { isValid as DFisValid } from "date-fns";
+
+// Validation Schema
+const PreviewFormSchema = z.object({
+  filterStatus: z.enum(["all", "valid", "invalid"]).optional(),
+  bulkCategoryId: z.string().optional(),
+});
+
+type PreviewFormData = z.infer<typeof PreviewFormSchema>;
 
 interface ParsedTransaction {
   id: string;
@@ -50,6 +50,13 @@ interface TransactionPreviewModalProps {
   expenseSheetName: string;
   isLinkedToIncome: boolean;
 }
+
+// Filter status options
+const FILTER_OPTIONS = [
+  { id: "all", name: "All" },
+  { id: "valid", name: "Valid only" },
+  { id: "invalid", name: "Invalid only" },
+];
 
 // Debounced Transaction Input Component
 const DebouncedTransactionInput = ({
@@ -161,6 +168,39 @@ const DebouncedTransactionInput = ({
   );
 };
 
+// Category Select Component for Table Rows
+const CategorySelect = ({
+  transaction,
+  categories,
+  onUpdate,
+}: {
+  transaction: ParsedTransaction;
+  categories: Category[];
+  onUpdate: (transactionId: string, categoryId: string) => void;
+}) => {
+  const categoryOptionsWithDisplay = categories.map((category) => ({
+    ...category,
+    displayName: `${category.name} (${category.bucket})`,
+  }));
+
+  const mockField = {
+    value: transaction.category_id || "",
+    onChange: (value: string) => onUpdate(transaction.id, value),
+  };
+
+  return (
+    <GenericFormSelect
+      field={mockField}
+      options={categoryOptionsWithDisplay}
+      displayKey="displayName"
+      placeholder="Select category"
+      fieldName={`category_${transaction.id}`}
+      required={false}
+      className="w-full text-xs"
+    />
+  );
+};
+
 const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
   isOpen,
   onClose,
@@ -171,14 +211,28 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
   isLinkedToIncome,
 }) => {
   const { user } = useUser();
+
+  // Form setup
+  const form = useForm<PreviewFormData>({
+    resolver: zodResolver(PreviewFormSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    criteriaMode: "all",
+    shouldFocusError: true,
+    defaultValues: {
+      filterStatus: "all",
+      bulkCategoryId: "",
+    },
+  });
+
+  const { watch, setValue } = form;
+  const filterStatus = watch("filterStatus") || "all";
+  const bulkCategoryId = watch("bulkCategoryId") || "";
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(
     new Set()
-  );
-  const [bulkCategoryId, setBulkCategoryId] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "valid" | "invalid">(
-    "all"
   );
 
   // Fetch categories
@@ -287,7 +341,7 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
         updateTransactionCategory(id, bulkCategoryId);
       });
       setSelectedTransactions(new Set());
-      setBulkCategoryId("");
+      setValue("bulkCategoryId", "");
       toast.success(
         `Category assigned to ${selectedTransactions.size} transactions`
       );
@@ -326,261 +380,253 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
 
   const handleClose = () => {
     setSelectedTransactions(new Set());
-    setBulkCategoryId("");
-    setFilterStatus("all");
+    form.reset({
+      filterStatus: "all",
+      bulkCategoryId: "",
+    });
     onClose();
   };
 
+  // Prepare categories with formatted display
+  const categoryOptionsWithDisplay = categories.map((category) => ({
+    ...category,
+    displayName: `${category.name} (${category.bucket})`,
+  }));
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="!bg-[var(--content)] !border-[var(--common-inputborder)] min-w-6xl h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="text-[var(--content-textprimary)]">
-            Transaction Preview - {expenseSheetName}
-          </DialogTitle>
-          <DialogDescription className="text-[var(--content-textsecondary)]">
-            Review and edit {transactions.length} imported transactions before
-            saving to your expense sheet.
-            {isLinkedToIncome && " This sheet is linked to an income source."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 overflow-y-auto flex-1">
-          {/* Stats and Filters */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{validCount} valid</Badge>
-                {invalidCount > 0 && (
-                  <Badge variant="destructive">{invalidCount} invalid</Badge>
-                )}
-              </div>
-              <Select
-                value={filterStatus}
-                onValueChange={(value: any) => setFilterStatus(value)}
-              >
-                <SelectTrigger className="w-32 !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                  <Filter size={14} />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="valid">Valid only</SelectItem>
-                  <SelectItem value="invalid">Invalid only</SelectItem>
-                </SelectContent>
-              </Select>
+    <Dialog
+      isOpen={isOpen}
+      handleClose={handleClose}
+      title={`Transaction Preview - ${expenseSheetName}`}
+      description={
+        <>
+          Review and edit {transactions.length} imported transactions before
+          saving to your expense sheet.
+          {isLinkedToIncome && " This sheet is linked to an income source."}
+        </>
+      }
+      maxWidth="min-w-6xl"
+      className="h-[90vh]"
+    >
+      <div className="space-y-4 overflow-y-auto flex-1">
+        {/* Stats and Filters */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{validCount} valid</Badge>
+              {invalidCount > 0 && (
+                <Badge variant="destructive">{invalidCount} invalid</Badge>
+              )}
             </div>
-          </div>
-
-          {/* Bulk Actions */}
-          {selectedTransactions.size > 0 && (
-            <div className="flex items-center gap-4 p-3 bg-[var(--common-brand)]/10 rounded-lg">
-              <span className="text-sm font-medium">
-                {selectedTransactions.size} selected
-              </span>
-              <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
-                <SelectTrigger className="w-48 !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                  <SelectValue placeholder="Assign category" />
-                </SelectTrigger>
-                <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name} ({category.bucket})
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                onClick={handleBulkCategoryUpdate}
-                disabled={!bulkCategoryId}
-                title="Apply to Selected"
-              />
-            </div>
-          )}
-
-          {/* Transaction Table */}
-          <div className="border rounded-lg overflow-hidden !bg-[var(--content)] !border-[var(--common-inputborder)]">
-            <div className="max-h-96 overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[var(--content-background)] sticky top-0 border-b">
-                  <tr>
-                    <th className="p-3 text-left">
-                      <Checkbox
-                        checked={
-                          selectedTransactions.size ===
-                            filteredTransactions.length &&
-                          filteredTransactions.length > 0
-                        }
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </th>
-                    <th className="p-3 text-left">Date</th>
-                    <th className="p-3 text-left">Payee</th>
-                    <th className="p-3 text-right">Amount</th>
-                    <th className="p-3 text-left">Category</th>
-                    <th className="p-3 text-center">Status</th>
-                    <th className="p-3 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTransactions.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className={`border-b hover:bg-[var(--content-background-hover)] ${
-                        !transaction.isValid ? "bg-[var(--common-error)]/5" : ""
-                      } ${
-                        selectedTransactions.has(transaction.id)
-                          ? "bg-[var(--common-brand)]/5"
-                          : ""
-                      }`}
-                    >
-                      <td className="p-3">
-                        <Checkbox
-                          checked={selectedTransactions.has(transaction.id)}
-                          onCheckedChange={(checked) =>
-                            handleSelectTransaction(
-                              transaction.id,
-                              checked as boolean
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="p-3">
-                        <DebouncedTransactionInput
-                          transaction={transaction}
-                          field="date"
-                          onUpdate={updateTransaction}
-                          type="date"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <DebouncedTransactionInput
-                          transaction={transaction}
-                          field="payee"
-                          onUpdate={updateTransaction}
-                          placeholder="Payee name"
-                        />
-                      </td>
-                      <td className="p-3 text-right">
-                        <DebouncedTransactionInput
-                          transaction={transaction}
-                          field="amount"
-                          onUpdate={updateTransaction}
-                          type="number"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Select
-                          value={transaction.category_id || ""}
-                          onValueChange={(value) =>
-                            updateTransactionCategory(transaction.id, value)
-                          }
-                        >
-                          <SelectTrigger className="w-full text-xs !bg-[var(--content)] !border-[var(--common-inputborder)]">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent className="!bg-[var(--content)] !border-[var(--common-inputborder)]">
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{
-                                      backgroundColor: category.color,
-                                    }}
-                                  />
-                                  {category.name} ({category.bucket})
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          {transaction.isValid ? (
-                            <Check
-                              size={16}
-                              className="text-[var(--common-success)]"
-                            />
-                          ) : (
-                            <AlertCircle
-                              size={16}
-                              className="text-[var(--common-error)]"
-                            />
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3 text-center">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => removeTransaction(transaction.id)}
-                          className="text-[var(--common-error)] hover:bg-[var(--common-error)]/10"
-                          icon={<Trash2 size={14} />}
-                          title="Remove Transaction"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Error Summary */}
-          {invalidCount > 0 && (
-            <div className="p-4 bg-[var(--common-warning)]/10 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle
-                  size={20}
-                  className="text-[var(--common-warning)] mt-0.5"
+            <Form {...form}>
+              <div className="w-32">
+                <FormField
+                  control={form.control}
+                  name="filterStatus"
+                  render={({ field }) => (
+                    <GenericFormSelect
+                      field={field}
+                      options={FILTER_OPTIONS}
+                      displayKey="name"
+                      placeholder="Filter"
+                      fieldName="filterStatus"
+                      required={false}
+                    />
+                  )}
                 />
-                <div>
-                  <h4 className="font-medium text-[var(--content-textprimary)] mb-2">
-                    {invalidCount} transactions have errors
-                  </h4>
-                  <p className="text-sm text-[var(--content-textsecondary)]">
-                    These transactions won't be saved. Please fix the errors or
-                    remove them.
-                  </p>
-                </div>
               </div>
-            </div>
-          )}
+            </Form>
+          </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-[var(--content-textsecondary)]">
-            {validCount} of {transactions.length} transactions ready to save
+        {/* Bulk Actions */}
+        {selectedTransactions.size > 0 && (
+          <div className="flex items-center gap-4 p-3 bg-[var(--common-brand)]/10 rounded-lg">
+            <span className="text-sm font-medium">
+              {selectedTransactions.size} selected
+            </span>
+            <Form {...form}>
+              <div className="w-48">
+                <FormField
+                  control={form.control}
+                  name="bulkCategoryId"
+                  render={({ field }) => (
+                    <GenericFormSelect
+                      field={field}
+                      options={categoryOptionsWithDisplay}
+                      displayKey="displayName"
+                      placeholder="Assign category"
+                      fieldName="bulkCategory"
+                      required={false}
+                    />
+                  )}
+                />
+              </div>
+            </Form>
+            <Button
+              type="button"
+              onClick={handleBulkCategoryUpdate}
+              disabled={!bulkCategoryId}
+              title="Apply to Selected"
+            />
           </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleClose}
-              title="Cancel"
-              className="w-fit"
-            />
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving || validCount === 0}
-              icon={isSaving ? undefined : <Save />}
-              title={isSaving ? "Saving..." : "Save Expense Sheet"}
-              className="w-fit"
-            />
+        )}
+
+        {/* Transaction Table */}
+        <div className="border rounded-lg overflow-hidden !bg-[var(--content)] !border-[var(--common-inputborder)]">
+          <div className="max-h-96 overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--content-background)] sticky top-0 border-b">
+                <tr>
+                  <th className="p-3 text-left">
+                    <Checkbox
+                      checked={
+                        selectedTransactions.size ===
+                          filteredTransactions.length &&
+                        filteredTransactions.length > 0
+                      }
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="p-3 text-left">Date</th>
+                  <th className="p-3 text-left">Payee</th>
+                  <th className="p-3 text-right">Amount</th>
+                  <th className="p-3 text-left">Category</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.map((transaction) => (
+                  <tr
+                    key={transaction.id}
+                    className={`border-b hover:bg-[var(--content-background-hover)] ${
+                      !transaction.isValid ? "bg-[var(--common-error)]/5" : ""
+                    } ${
+                      selectedTransactions.has(transaction.id)
+                        ? "bg-[var(--common-brand)]/5"
+                        : ""
+                    }`}
+                  >
+                    <td className="p-3">
+                      <Checkbox
+                        checked={selectedTransactions.has(transaction.id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectTransaction(
+                            transaction.id,
+                            checked as boolean
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="p-3">
+                      <DebouncedTransactionInput
+                        transaction={transaction}
+                        field="date"
+                        onUpdate={updateTransaction}
+                        type="date"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <DebouncedTransactionInput
+                        transaction={transaction}
+                        field="payee"
+                        onUpdate={updateTransaction}
+                        placeholder="Payee name"
+                      />
+                    </td>
+                    <td className="p-3 text-right">
+                      <DebouncedTransactionInput
+                        transaction={transaction}
+                        field="amount"
+                        onUpdate={updateTransaction}
+                        type="number"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <CategorySelect
+                        transaction={transaction}
+                        categories={categories}
+                        onUpdate={updateTransactionCategory}
+                      />
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {transaction.isValid ? (
+                          <Check
+                            size={16}
+                            className="text-[var(--common-success)]"
+                          />
+                        ) : (
+                          <AlertCircle
+                            size={16}
+                            className="text-[var(--common-error)]"
+                          />
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-3 text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => removeTransaction(transaction.id)}
+                        className="text-[var(--common-error)] hover:bg-[var(--common-error)]/10"
+                        icon={<Trash2 size={14} />}
+                        title="Remove Transaction"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </DialogContent>
+
+        {/* Error Summary */}
+        {invalidCount > 0 && (
+          <div className="p-4 bg-[var(--common-warning)]/10 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle
+                size={20}
+                className="text-[var(--common-warning)] mt-0.5"
+              />
+              <div>
+                <h4 className="font-medium text-[var(--content-textprimary)] mb-2">
+                  {invalidCount} transactions have errors
+                </h4>
+                <p className="text-sm text-[var(--content-textsecondary)]">
+                  These transactions won't be saved. Please fix the errors or
+                  remove them.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Actions */}
+      <div className="flex justify-between items-center pt-4 border-t">
+        <div className="text-sm text-[var(--content-textsecondary)]">
+          {validCount} of {transactions.length} transactions ready to save
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            title="Cancel"
+            className="w-fit"
+          />
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || validCount === 0}
+            icon={isSaving ? undefined : <Save />}
+            title={isSaving ? "Saving..." : "Save Expense Sheet"}
+            className="w-fit"
+          />
+        </div>
+      </div>
     </Dialog>
   );
 };

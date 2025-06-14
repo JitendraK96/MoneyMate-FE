@@ -10,21 +10,15 @@ import Page from "@/components/page";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
 import { Input } from "@/components/inputs";
-import { Textarea } from "@/components/ui/textarea";
 import DataTable from "@/components/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Upload, ArrowLeft, History, Edit } from "lucide-react";
+import { Upload, History, Save } from "lucide-react";
 import UploadStatementModal from "./modal/UploadStatementModal";
 import EditTransactionModal from "./modal/EditTransactionModal";
 import { getTransactionColumns, TransactionWithDetails } from "./columnDefs";
+import GenericFormSelect from "@/components/select";
 
 // Validation Schema
 const ExpenseSheetSchema = z.object({
@@ -37,7 +31,9 @@ const ExpenseSheetSchema = z.object({
     .max(1000, { message: "Description must not exceed 1000 characters." })
     .optional()
     .or(z.literal("")),
-  linkedIncomeId: z.string().optional().or(z.literal("")),
+  linkedIncomeId: z
+    .string()
+    .min(1, { message: "Please select an income source." }),
 });
 
 type ExpenseSheetFormData = z.infer<typeof ExpenseSheetSchema>;
@@ -101,6 +97,29 @@ const CreateExpenseSheet = () => {
     formState: { isValid },
   } = form;
 
+  // Custom isDirty calculation
+  const isFormDirty = () => {
+    if (!isEditMode) return true; // Always allow saving in create mode
+
+    const currentValues = {
+      name: (name || "").trim(),
+      description: (description || "").trim(),
+      linkedIncomeId: linkedIncomeId || "",
+    };
+
+    const original = {
+      name: (originalValues.name || "").trim(),
+      description: (originalValues.description || "").trim(),
+      linkedIncomeId: originalValues.linkedIncomeId || "",
+    };
+
+    return (
+      currentValues.name !== original.name ||
+      currentValues.description !== original.description ||
+      currentValues.linkedIncomeId !== original.linkedIncomeId
+    );
+  };
+
   // Data states
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [existingTransactions, setExistingTransactions] = useState<
@@ -110,6 +129,12 @@ const CreateExpenseSheet = () => {
   const [currentExpenseSheet, setCurrentExpenseSheet] =
     useState<ExpenseSheet | null>(null);
   const [isLoadingSheet, setIsLoadingSheet] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [originalValues, setOriginalValues] = useState<ExpenseSheetFormData>({
+    name: "",
+    description: "",
+    linkedIncomeId: "",
+  });
 
   // Modal states
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -139,14 +164,23 @@ const CreateExpenseSheet = () => {
         setCurrentExpenseSheet(data);
 
         // Populate form with existing data
-        form.setValue("name", data.name || "");
-        form.setValue("description", data.description || "");
-        form.setValue("linkedIncomeId", data.income_id || "");
+        const formData = {
+          name: data.name || "",
+          description: data.description || "",
+          linkedIncomeId: data.income_id || "",
+        };
+
+        form.setValue("name", formData.name);
+        form.setValue("description", formData.description);
+        form.setValue("linkedIncomeId", formData.linkedIncomeId);
+
+        // Set original values for dirty comparison
+        setOriginalValues(formData);
       }
     } catch (error) {
       console.error("Error fetching expense sheet:", error);
       toast.error("Failed to load expense sheet data");
-      navigate("/dashboard/expense");
+      navigate("/dashboard/expenses");
     } finally {
       setIsLoadingSheet(false);
     }
@@ -208,14 +242,81 @@ const CreateExpenseSheet = () => {
     }
   };
 
+  // Save/Update sheet only (without transactions)
+  const handleSaveSheetOnly = async () => {
+    if (!user?.id || !isValid) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (isEditMode && !isFormDirty()) {
+      toast.info("No changes to save");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const trimmedValues = {
+        name: name.trim(),
+        description: description?.trim() || "",
+        linkedIncomeId: linkedIncomeId || "",
+      };
+
+      if (isEditMode && currentExpenseSheet) {
+        // Update existing expense sheet
+        const { error: sheetError } = await supabase
+          .from("expense_sheets")
+          .update({
+            name: trimmedValues.name,
+            description: trimmedValues.description || null,
+            income_id: trimmedValues.linkedIncomeId || null,
+          })
+          .eq("id", currentExpenseSheet.id)
+          .eq("user_id", user.id);
+
+        if (sheetError) throw sheetError;
+
+        toast.success(
+          `Expense sheet "${trimmedValues.name}" updated successfully`
+        );
+
+        // Update original values to current values after successful save
+        setOriginalValues(trimmedValues);
+      } else {
+        // Create new expense sheet
+        const { data: sheetData, error: sheetError } = await supabase
+          .from("expense_sheets")
+          .insert([
+            {
+              user_id: user.id,
+              name: trimmedValues.name,
+              description: trimmedValues.description || null,
+              income_id: trimmedValues.linkedIncomeId || null,
+            },
+          ])
+          .select()
+          .single();
+
+        if (sheetError) throw sheetError;
+
+        toast.success(
+          `Expense sheet "${trimmedValues.name}" created successfully`
+        );
+        // Navigate to the new sheet's edit page
+        navigate(`/dashboard/expenses/${sheetData.id}`);
+      }
+    } catch (error) {
+      console.error("Error saving expense sheet:", error);
+      toast.error("Failed to save expense sheet. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Save functionality for the modal
   const handleSaveFromModal = async (
     validTransactions: ParsedTransaction[]
   ) => {
-    if (!user?.id || !isValid) {
-      throw new Error("Please fill in all required fields");
-    }
-
     if (validTransactions.length === 0) {
       throw new Error("No valid transactions to save");
     }
@@ -284,7 +385,7 @@ const CreateExpenseSheet = () => {
       await fetchExistingTransactions(sheetId);
     }
 
-    navigate(`/dashboard/expense/${sheetId}`);
+    navigate(`/dashboard/expenses/${sheetId}`);
   };
 
   // Handle transaction edit
@@ -365,32 +466,13 @@ const CreateExpenseSheet = () => {
   return (
     <Page title={pageTitle} subTitle={pageSubtitle}>
       <div className="space-y-6">
-        {/* Navigation */}
-        <div className="flex items-center gap-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => navigate("/dashboard/expense")}
-            icon={<ArrowLeft />}
-            title="Back to Expense Sheets"
-          />
-          {isEditMode && (
-            <div className="flex items-center gap-2 text-[var(--content-textsecondary)]">
-              <Edit size={16} />
-              <span className="text-sm">
-                Editing: {currentExpenseSheet?.name}
-              </span>
-            </div>
-          )}
-        </div>
-
         {/* Sheet Details Form */}
         <Card
-          title={isEditMode ? "Update Sheet Details" : "Expense Sheet Details"}
+          title="Details"
           cardContent={
             <Form {...form}>
               <form>
-                <div className="form-wrapper no-bottom-margin">
+                <div className="form-wrapper">
                   <FormField
                     control={form.control}
                     name="name"
@@ -399,7 +481,7 @@ const CreateExpenseSheet = () => {
                         field={field}
                         type="text"
                         placeholder="e.g., Monthly Expenses, Vacation Budget"
-                        label="Sheet Name *"
+                        label="Sheet Name"
                         required
                         onChange={(e) => {
                           const value = e.target.value;
@@ -412,42 +494,6 @@ const CreateExpenseSheet = () => {
                       />
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="linkedIncomeId"
-                    render={({ field }) => (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-[var(--content-textprimary)]">
-                          Link to Income (Optional)
-                        </label>
-                        <Select
-                          value={field.value || ""}
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            form.setValue("linkedIncomeId", value, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                              shouldTouch: true,
-                            });
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select income source" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {incomes.map((income) => (
-                              <SelectItem key={income.id} value={income.id}>
-                                {income.source} - ₹
-                                {income.amount.toLocaleString("en-IN")}{" "}
-                                {income.frequency}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  />
                 </div>
 
                 <div className="form-wrapper">
@@ -455,67 +501,65 @@ const CreateExpenseSheet = () => {
                     control={form.control}
                     name="description"
                     render={({ field }) => (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-[var(--content-textprimary)]">
-                          Description (Optional)
-                        </label>
-                        <Textarea
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            form.setValue("description", value, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                              shouldTouch: true,
-                            });
-                          }}
-                          placeholder="Brief description of this expense sheet"
-                          rows={3}
-                        />
-                      </div>
+                      <Input
+                        field={field}
+                        type="textarea"
+                        placeholder="Optional description for this income source"
+                        label="Description"
+                        rows={2}
+                      />
+                    )}
+                  />
+                </div>
+
+                <div className="form-wrapper no-bottom-margin">
+                  <FormField
+                    control={form.control}
+                    name="linkedIncomeId"
+                    render={({ field }) => (
+                      <GenericFormSelect
+                        field={field}
+                        options={incomes}
+                        displayKey="source"
+                        label="Link to Income"
+                        placeholder="Select income source"
+                        fieldName="linkedIncomeId"
+                        required={true}
+                      />
                     )}
                   />
                 </div>
               </form>
             </Form>
           }
-        />
-
-        {/* Upload Statement Button */}
-        <Card
-          title={
-            isEditMode ? "Add More Transactions" : "Upload Transaction File"
-          }
-          cardContent={
-            <div className="text-center py-8">
-              <div className="flex flex-col items-center gap-4">
-                <Upload
-                  size={48}
-                  className="text-[var(--content-textsecondary)]"
-                />
-                <div>
-                  <h3 className="text-lg font-medium text-[var(--content-textprimary)] mb-2">
-                    Ready to upload your transactions?
-                  </h3>
-                  <p className="text-sm text-[var(--content-textsecondary)] mb-4">
-                    Upload Excel or CSV files to automatically import your
-                    expense transactions.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    disabled={!isValid}
-                    icon={<Upload />}
-                    title="Upload Statement"
-                    className="w-fit"
-                  />
-                  {!isValid && (
-                    <p className="text-xs text-[var(--common-warning)] mt-2">
-                      Please fill in the sheet name to continue
-                    </p>
-                  )}
-                </div>
-              </div>
+          footerContent={
+            <div className="flex justify-end gap-4">
+              <Button
+                type="button"
+                onClick={handleSaveSheetOnly}
+                disabled={
+                  !isValid || isSaving || (isEditMode && !isFormDirty())
+                }
+                icon={<Save />}
+                title={
+                  isEditMode
+                    ? isSaving
+                      ? "Updating..."
+                      : "Update Sheet"
+                    : isSaving
+                    ? "Creating..."
+                    : "Create Sheet"
+                }
+                className="w-fit"
+              />
+              <Button
+                type="button"
+                onClick={() => setIsUploadModalOpen(true)}
+                disabled={isEditMode ? false : !isValid}
+                icon={<Upload />}
+                title="Upload Statement"
+                className="w-fit"
+              />
             </div>
           }
         />

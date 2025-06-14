@@ -13,7 +13,7 @@ import Page from "@/components/page";
 import Card from "@/components/card";
 import DataTable from "@/components/table";
 import { getCategoryAllocationTableColumns } from "./columnDefs";
-import { Calculator, Info, Target, Minus } from "lucide-react";
+import { Calculator, Info } from "lucide-react";
 
 interface CategoryAllocation {
   category_id: string;
@@ -394,63 +394,6 @@ const CategoryAllocation: React.FC = () => {
     }
   };
 
-  // Allocate equally across all categories in a bucket
-  const allocateEqually = (bucketKey: BucketKey) => {
-    const bucketCategories = getCategoriesForBucket(bucketKey);
-    const bucketTotal = getBucketTotalAmount(bucketKey);
-
-    if (bucketCategories.length === 0) return;
-
-    const baseAmountPerCategory = Math.floor(
-      bucketTotal / bucketCategories.length
-    );
-    const remainder =
-      bucketTotal - baseAmountPerCategory * bucketCategories.length;
-
-    bucketCategories.forEach((category, index) => {
-      const fieldKey = `${bucketKey}_${category.id}`;
-      let amountForThisCategory = baseAmountPerCategory;
-
-      if (index < remainder) {
-        amountForThisCategory += 1;
-      }
-
-      form.setValue(fieldKey, amountForThisCategory, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    });
-
-    toast.success(
-      `Allocated ${formatCurrency(bucketTotal)} equally across ${
-        bucketCategories.length
-      } ${BUCKETS.find(
-        (b) => b.key === bucketKey
-      )?.label.toLowerCase()} categories`
-    );
-  };
-
-  // Clear all allocations in a bucket
-  const clearBucketAllocations = (bucketKey: BucketKey) => {
-    const bucketCategories = getCategoriesForBucket(bucketKey);
-
-    bucketCategories.forEach((category) => {
-      const fieldKey = `${bucketKey}_${category.id}`;
-      form.setValue(fieldKey, 0, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    });
-
-    toast.success(
-      `Cleared all ${BUCKETS.find(
-        (b) => b.key === bucketKey
-      )?.label.toLowerCase()} allocations`
-    );
-  };
-
   const onSubmit = async (values: AllocationFormData) => {
     if (!income) return;
 
@@ -553,7 +496,7 @@ const CategoryAllocation: React.FC = () => {
         income.monthly_amount
       )}/month • Allocate your income to specific categories using actual amounts within each budget bucket.`}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 mt-4">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -593,7 +536,7 @@ const CategoryAllocation: React.FC = () => {
             return (
               <div
                 key={bucket.key}
-                className="text-center p-4 bg-white rounded border"
+                className="text-center p-4 bg-white rounded"
               >
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <div
@@ -669,9 +612,6 @@ const CategoryAllocation: React.FC = () => {
               const hasCategories = bucketCategories.length > 0;
               const isOverAllocated =
                 totalAllocatedAmount > bucketTotalAmount + 1;
-              const hasAllocations = bucketCategories.some(
-                (cat) => (form.getValues(`${bucket.key}_${cat.id}`) || 0) > 0
-              );
               const filteredTableData = getFilteredTableData(bucket.key);
 
               return (
@@ -680,36 +620,16 @@ const CategoryAllocation: React.FC = () => {
                   title={`${bucket.label} ${bucketPercentage}%`}
                   headerContent={
                     <div className="flex items-center gap-2">
-                      {hasCategories && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => allocateEqually(bucket.key)}
-                            title="Allocate Equally"
-                            className="text-xs"
-                            icon={<Target />}
-                          />
-                          {hasAllocations && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => clearBucketAllocations(bucket.key)}
-                              title="Clear All"
-                              className="text-xs"
-                              icon={<Minus />}
-                            />
-                          )}
-                        </>
-                      )}
                       <div className="text-right">
-                        <div className="text-lg font-bold text-gray-900">
+                        <div className="text-[var(--content-textprimary)] font-size-small">
                           {formatCurrency(bucketTotalAmount)}
                         </div>
                         {totalAllocatedAmount > 0 && (
                           <div
-                            className={`text-sm ${
-                              isOverAllocated ? "text-red-600" : "text-gray-600"
+                            className={`font-size-extra-small ${
+                              isOverAllocated
+                                ? "text-red-600"
+                                : "text-[var(--content-textplaceholder)]"
                             }`}
                           >
                             {formatCurrency(totalAllocatedAmount)} allocated

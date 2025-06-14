@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, AlertCircle, Trash2 } from "lucide-react";
 import { Input, DatePicker } from "@/components/inputs";
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { Button as ShadcnButton } from "@/components/ui/button";
 
 interface ParsedTransaction {
   id: string;
@@ -204,14 +205,16 @@ export const getTransactionTableColumns = ({
   {
     id: "select",
     header: () => (
-      <Checkbox
-        checked={
-          selectedTransactions.size === filteredTransactions.length &&
-          filteredTransactions.length > 0
-        }
-        onCheckedChange={(checked) => onSelectAll(checked as boolean)}
-        aria-label="Select all transactions"
-      />
+      <ShadcnButton variant="ghost" className="table-heading pl-3">
+        <Checkbox
+          checked={
+            selectedTransactions.size === filteredTransactions.length &&
+            filteredTransactions.length > 0
+          }
+          onCheckedChange={(checked) => onSelectAll(checked as boolean)}
+          aria-label="Select all transactions"
+        />
+      </ShadcnButton>
     ),
     cell: ({ row }) => (
       <Checkbox
@@ -228,7 +231,11 @@ export const getTransactionTableColumns = ({
   },
   {
     accessorKey: "date",
-    header: "Date",
+    header: () => (
+      <ShadcnButton variant="ghost" className="table-heading">
+        Date
+      </ShadcnButton>
+    ),
     cell: ({ row }) => (
       <DebouncedTransactionInput
         transaction={row.original}
@@ -242,7 +249,11 @@ export const getTransactionTableColumns = ({
   },
   {
     accessorKey: "payee",
-    header: "Payee",
+    header: () => (
+      <ShadcnButton variant="ghost" className="table-heading">
+        Payee
+      </ShadcnButton>
+    ),
     cell: ({ row }) => (
       <DebouncedTransactionInput
         transaction={row.original}
@@ -256,7 +267,11 @@ export const getTransactionTableColumns = ({
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: () => (
+      <ShadcnButton variant="ghost" className="table-heading">
+        Amount
+      </ShadcnButton>
+    ),
     cell: ({ row }) => (
       <div className="text-right">
         <DebouncedTransactionInput
@@ -277,7 +292,11 @@ export const getTransactionTableColumns = ({
   },
   {
     accessorKey: "category_id",
-    header: "Category",
+    header: () => (
+      <ShadcnButton variant="ghost" className="table-heading">
+        Category
+      </ShadcnButton>
+    ),
     cell: ({ row }) => {
       const selectedCategory = categories.find(
         (cat) => cat.id === row.original.category_id
@@ -338,7 +357,11 @@ export const getTransactionTableColumns = ({
   },
   {
     accessorKey: "isValid",
-    header: "Status",
+    header: () => (
+      <ShadcnButton variant="ghost" className="table-heading">
+        Status
+      </ShadcnButton>
+    ),
     cell: ({ row }) => (
       <div className="flex items-center justify-center gap-2">
         {row.original.isValid ? (
@@ -371,16 +394,20 @@ export const getTransactionTableColumns = ({
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => (
+      <ShadcnButton variant="ghost" className="table-heading">
+        Actions
+      </ShadcnButton>
+    ),
     cell: ({ row }) => (
       <div className="flex justify-center">
         <Button
           type="button"
           variant="ghost"
           onClick={() => onRemoveTransaction(row.original.id)}
-          className="text-[var(--common-error)] hover:bg-[var(--common-error)]/10 p-1 h-auto"
+          className="text-[var(--common-error)] bg-transparent"
           icon={<Trash2 size={14} />}
-          title="Remove Transaction"
+          title=""
         />
       </div>
     ),
