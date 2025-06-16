@@ -14,7 +14,7 @@ interface EmiTableRow {
   year: number;
 }
 
-// Debounced input component to prevent focus loss
+// === Debounced input for Prepayment ===
 const DebouncedPrepaymentInput = ({
   month,
   currentPrepayment,
@@ -30,41 +30,30 @@ const DebouncedPrepaymentInput = ({
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Update local value when the prop changes (but only if input is not focused)
   useEffect(() => {
     if (document.activeElement !== inputRef.current) {
       setLocalValue(currentPrepayment?.toString() || "");
     }
   }, [currentPrepayment]);
 
-  // Debounced onChange handler
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setLocalValue(value);
 
-      // Clear existing timeout
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
 
-      // Set new timeout for debounced update
       debounceRef.current = setTimeout(() => {
         const numericValue = value === "" ? 0 : Number(value);
         onPrepaymentChange(month, numericValue);
-      }, 500); // 500ms delay
+      }, 500);
     },
     [month, onPrepaymentChange]
   );
 
-  // Immediate update on blur
   const handleBlur = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      // Clear any pending timeout
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
 
       const value = e.target.value;
       const numericValue = value === "" ? 0 : Number(value);
@@ -73,16 +62,10 @@ const DebouncedPrepaymentInput = ({
     [month, onPrepaymentChange]
   );
 
-  // Handle Enter key
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        // Clear any pending timeout
-        if (debounceRef.current) {
-          clearTimeout(debounceRef.current);
-          debounceRef.current = null;
-        }
-
+        if (debounceRef.current) clearTimeout(debounceRef.current);
         const target = e.target as HTMLInputElement;
         const numericValue = target.value === "" ? 0 : Number(target.value);
         onPrepaymentChange(month, numericValue);
@@ -92,12 +75,9 @@ const DebouncedPrepaymentInput = ({
     [month, onPrepaymentChange]
   );
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
 
@@ -105,9 +85,7 @@ const DebouncedPrepaymentInput = ({
     <Input
       ref={inputRef}
       type="number"
-      field={{
-        value: localValue,
-      }}
+      field={{ value: localValue }}
       formInput={false}
       onChange={handleChange}
       onBlur={handleBlur}
@@ -120,9 +98,94 @@ const DebouncedPrepaymentInput = ({
   );
 };
 
+// === Debounced input for Floating Interest ===
+const DebouncedFloatingRateInput = ({
+  month,
+  currentRate,
+  onRateChange,
+}: {
+  month: number;
+  currentRate: number;
+  onRateChange: (month: number, rate: number) => void;
+}) => {
+  const [localValue, setLocalValue] = useState(currentRate?.toString() || "");
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setLocalValue(currentRate?.toString() || "");
+    }
+  }, [currentRate]);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setLocalValue(value);
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      debounceRef.current = setTimeout(() => {
+        const numericValue = value === "" ? 0 : Number(value);
+        onRateChange(month, numericValue);
+      }, 500);
+    },
+    [month, onRateChange]
+  );
+
+  const handleBlur = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      const value = e.target.value;
+      const numericValue = value === "" ? 0 : Number(value);
+      onRateChange(month, numericValue);
+    },
+    [month, onRateChange]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        const target = e.target as HTMLInputElement;
+        const numericValue = target.value === "" ? 0 : Number(target.value);
+        onRateChange(month, numericValue);
+        inputRef.current?.blur();
+      }
+    },
+    [month, onRateChange]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  return (
+    <Input
+      ref={inputRef}
+      type="number"
+      field={{ value: localValue }}
+      formInput={false}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder="e.g. 9.5"
+      min="0"
+      step="0.01"
+      className="max-w-[150px]"
+    />
+  );
+};
+
+// === Columns ===
 export const getEmiTableColumns = (
   onPrepaymentChange: (month: number, amount: number) => void,
-  prepayments: Record<number, number>
+  prepayments: Record<number, number>,
+  onFloatingRateChange: (month: number, rate: number) => void,
+  floatingRates: Record<number, number>
 ): ColumnDef<EmiTableRow>[] => [
   {
     accessorKey: "month",
@@ -208,7 +271,7 @@ export const getEmiTableColumns = (
     cell: ({ row }) => {
       const outstanding = Number(row.getValue("outstandingLoan"));
       return (
-        <div className={`${outstanding === 0 ? "text-green-600" : ""}`}>
+        <div className={outstanding === 0 ? "text-green-600" : ""}>
           ₹{outstanding.toLocaleString("en-IN")}
         </div>
       );
@@ -221,7 +284,6 @@ export const getEmiTableColumns = (
     cell: ({ row }) => {
       const month = row.getValue("month") as number;
       const currentPrepayment = prepayments[month] || 0;
-
       return (
         <DebouncedPrepaymentInput
           month={month}
@@ -232,5 +294,22 @@ export const getEmiTableColumns = (
     },
     enableSorting: false,
     size: 120,
+  },
+  {
+    id: "floatingRate",
+    header: () => <div>Floating Rate (%)</div>,
+    cell: ({ row }) => {
+      const month = row.getValue("month") as number;
+      const currentRate = floatingRates[month] || 0;
+      return (
+        <DebouncedFloatingRateInput
+          month={month}
+          currentRate={currentRate}
+          onRateChange={onFloatingRateChange}
+        />
+      );
+    },
+    enableSorting: false,
+    size: 140,
   },
 ];

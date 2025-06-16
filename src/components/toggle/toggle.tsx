@@ -28,7 +28,6 @@ export default function Toggle({
         checked={checked}
         disabled={disabled}
         onCheckedChange={(checked) => {
-          console.log(checked, "checked");
           return onCheckedChange(checked);
         }}
         className="border-[var(--common-inputborder)] mt-5"

@@ -1,77 +1,55 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-interface EmiDetail {
+export interface EmiDetails {
   id: string;
   user_id: string;
   name: string;
-  loan_amount?: number;
-  rate_of_interest?: number;
-  hike_percentage?: number;
+  loan_amount: number;
+  rate_of_interest: number;
   tenure: number;
-  prepayments: { [month: number]: number };
-}
-
-interface UseEmiDetailsReturn {
-  data: EmiDetail | null;
-  loading: boolean;
-  error: string | null;
-  refetch: () => void;
+  hike_percentage: number;
+  prepayments: Record<number, number>;
+  floating_rates: Record<number, number>; // ✅ NEW FIELD
+  is_paid: boolean;
+  is_compound_interest: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface UseEmiDetailsProps {
-  id?: string | null;
+  id?: string;
   userId?: string | null;
-  shouldFetch?: boolean;
 }
 
-export const useEmiDetails = ({
-  id,
-  userId,
-  shouldFetch = true,
-}: UseEmiDetailsProps): UseEmiDetailsReturn => {
-  const [data, setData] = useState<EmiDetail | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+export const useEmiDetails = ({ id, userId }: UseEmiDetailsProps) => {
+  const [data, setData] = useState<EmiDetails | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const fetchEmiDetails = async () => {
-    if (!id || !userId || !shouldFetch) {
-      return;
-    }
+  useEffect(() => {
+    if (!id || !userId) return;
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data: result, error: supabaseError } = await supabase
+    const fetchDetails = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
         .from("emi_details")
         .select("*")
         .eq("id", id)
         .eq("user_id", userId)
         .single();
 
-      if (supabaseError) {
-        throw supabaseError;
+      if (error) {
+        console.error("Error fetching EMI details:", error.message);
+        setData(null);
+      } else {
+        setData(data as EmiDetails);
       }
 
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      setData(null);
-    } finally {
       setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (id && userId) {
-      fetchEmiDetails();
-    }
-  }, [id, userId, shouldFetch]);
+    fetchDetails();
+  }, [id, userId]);
 
-  const refetch = () => {
-    fetchEmiDetails();
-  };
-
-  return { data, loading, error, refetch };
+  return { data, loading };
 };

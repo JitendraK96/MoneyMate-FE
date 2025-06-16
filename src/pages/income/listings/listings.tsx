@@ -105,12 +105,8 @@ const IncomeManagement = () => {
 
         incomesData = data;
         incomesError = error;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
-        // Enhanced view doesn't exist yet, fallback to regular incomes
-        console.log(
-          "Enhanced view not available, using regular incomes",
-          error
-        );
         const { data, error: fallbackError } = await supabase
           .from("incomes")
           .select("*")

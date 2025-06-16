@@ -5,13 +5,12 @@ import { useUser } from "@/context/UserContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { FormSchema } from "@/pages/emitracker/details/validationSchema";
 import Card from "@/components/card";
 import { Form, FormField } from "@/components/ui/form";
 import { Input, Button } from "@/components/inputs";
-import { useWatch } from "react-hook-form";
 import DataTable from "@/components/table";
 import { getEmiTableColumns } from "./emiTableColumnDefs";
 import { supabase } from "@/lib/supabaseClient";
@@ -48,13 +47,11 @@ const Details = () => {
       tenure: 1,
       hikePercentage: 0,
       prepayments: {},
+      floatingRates: {}, // ✅ new field
     },
   });
 
-  const { data, loading } = useEmiDetails({
-    id: id,
-    userId: user?.id,
-  });
+  const { data } = useEmiDetails({ id, userId: user?.id });
 
   useEffect(() => {
     if (data) {
@@ -65,6 +62,7 @@ const Details = () => {
         tenure: data.tenure || 1,
         hikePercentage: data.hike_percentage || 0,
         prepayments: data.prepayments || {},
+        floatingRates: data.floating_rates || {}, // ✅ set floatingRates
       });
     }
   }, [data, form]);
@@ -78,6 +76,7 @@ const Details = () => {
       "tenure",
       "hikePercentage",
       "prepayments",
+      "floatingRates",
     ],
   });
 
@@ -88,6 +87,7 @@ const Details = () => {
     tenure,
     hikePercentage,
     prepayments,
+    floatingRates,
   ] = watchedValues;
 
   const {
@@ -105,74 +105,100 @@ const Details = () => {
   const generateTableData = (): {
     tableData: EmiTableRow[];
     totalInterest: number;
+    totalPrincipalPaid: number;
   } => {
-    const monthlyRate = rateOfInterest / 12 / 100;
     const totalMonths = tenure * 12;
     let outstandingLoan = loanAmount;
-    let emi = calculateEMI(loanAmount, rateOfInterest, totalMonths);
+    let currentRate = rateOfInterest;
+    let emi = calculateEMI(outstandingLoan, currentRate, totalMonths);
     let totalInterest = 0;
-
+    let totalPrincipalPaid = 0;
     const tableData: EmiTableRow[] = [];
 
     for (let month = 1; month <= totalMonths; month++) {
-      // Apply EMI hike at the start of each year (1st month of the year)
+      // Floating rate change
+      if (floatingRates && floatingRates[month]) {
+        currentRate = floatingRates[month];
+        const remainingMonths = totalMonths - month + 1;
+        emi = calculateEMI(outstandingLoan, currentRate, remainingMonths);
+      }
+
+      const monthlyRate = currentRate / 12 / 100;
+
+      // EMI hike yearly
       if (month > 1 && (month - 1) % 12 === 0) {
-        emi += (emi * hikePercentage!) / 100;
+        emi += (emi * hikePercentage) / 100;
       }
 
-      const towardsInterest = outstandingLoan * monthlyRate;
-      const towardsLoan = emi - towardsInterest;
-
-      // Apply prepayment if any for the current month
+      const interest = outstandingLoan * monthlyRate;
+      const principal = emi - interest;
       const prepayment = prepayments[month] || 0;
-      outstandingLoan -= towardsLoan + prepayment;
 
-      // Stop if the loan is fully paid
-      if (outstandingLoan <= 0) {
-        tableData.push({
-          month,
-          emi: Number(emi.toFixed(0)),
-          towardsLoan: Number((towardsLoan + outstandingLoan).toFixed(0)),
-          towardsInterest: Number(towardsInterest.toFixed(0)),
-          outstandingLoan: 0,
-          prepayment: Number(prepayment.toFixed(0)),
-          year: Math.ceil(month / 12),
-        });
-        break;
+      let appliedPrincipal = principal;
+      let newOutstanding = outstandingLoan - principal - prepayment;
+
+      if (newOutstanding < 0) {
+        appliedPrincipal += newOutstanding; // adjust principal if overpaid
+        newOutstanding = 0;
       }
-
-      totalInterest += towardsInterest;
 
       tableData.push({
         month,
-        emi: Number(emi.toFixed(0)),
-        towardsLoan: Number(towardsLoan.toFixed(0)),
-        towardsInterest: Number(towardsInterest.toFixed(0)),
-        outstandingLoan: Number(outstandingLoan.toFixed(0)),
-        prepayment: Number(prepayment.toFixed(0)),
+        emi: Math.round(emi),
+        towardsLoan: Math.round(appliedPrincipal),
+        towardsInterest: Math.round(interest),
+        outstandingLoan: Math.round(newOutstanding),
+        prepayment: Math.round(prepayment),
         year: Math.ceil(month / 12),
       });
+
+      totalInterest += interest;
+      totalPrincipalPaid += appliedPrincipal + prepayment;
+      outstandingLoan = newOutstanding;
+
+      if (outstandingLoan <= 0) break;
     }
 
-    return { tableData, totalInterest: Number(totalInterest.toFixed(0)) };
+    return {
+      tableData,
+      totalInterest: Math.round(totalInterest),
+      totalPrincipalPaid: Math.round(totalPrincipalPaid),
+    };
   };
 
-  const { tableData, totalInterest } = generateTableData();
+  const { tableData, totalInterest, totalPrincipalPaid } = generateTableData();
 
   const filteredTableData = tableData.filter((row) => {
     if (!searchQuery) return true;
-
-    const searchLower = searchQuery.toLowerCase();
+    const search = searchQuery.toLowerCase();
     return (
-      row.month.toString().includes(searchLower) ||
-      row.year.toString().includes(searchLower) ||
-      row.emi.toString().includes(searchLower) ||
-      row.outstandingLoan.toString().includes(searchLower)
+      row.month.toString().includes(search) ||
+      row.year.toString().includes(search) ||
+      row.emi.toString().includes(search) ||
+      row.outstandingLoan.toString().includes(search)
     );
   });
 
-  const handleSearch = (search: string) => {
-    setSearchQuery(search.trim());
+  const handleSearch = (value: string) => {
+    setSearchQuery(value.trim());
+  };
+
+  const handlePrepaymentChange = (month: number, amount: number) => {
+    const updated = { ...form.getValues("prepayments"), [month]: amount };
+    if (amount <= 0) delete updated[month];
+    form.setValue("prepayments", updated, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
+  const handleFloatingRateChange = (month: number, rate: number) => {
+    const updated = { ...form.getValues("floatingRates"), [month]: rate };
+    if (rate <= 0) delete updated[month];
+    form.setValue("floatingRates", updated, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   const handleUpdate = async () => {
@@ -180,19 +206,20 @@ const Details = () => {
     const { error } = await supabase
       .from("emi_details")
       .update({
-        name: name,
+        name,
         loan_amount: loanAmount,
         rate_of_interest: rateOfInterest,
         tenure,
         hike_percentage: hikePercentage,
-        prepayments: prepayments,
+        prepayments,
+        floating_rates: floatingRates, // ✅ store to DB
       })
       .eq("user_id", user.id)
       .eq("id", id);
-    setIsSaving(false);
 
+    setIsSaving(false);
     if (error) {
-      toast.error("Failed to update EMI details. Please try again.");
+      toast.error("Failed to update EMI details.");
       return;
     }
 
@@ -205,19 +232,20 @@ const Details = () => {
     const { error } = await supabase.from("emi_details").insert([
       {
         user_id: user.id,
-        name: name,
+        name,
         loan_amount: loanAmount,
         rate_of_interest: rateOfInterest,
         tenure,
         hike_percentage: hikePercentage,
-        prepayments: prepayments,
+        prepayments,
+        floating_rates: floatingRates,
         is_paid: false,
       },
     ]);
-    setIsSaving(false);
 
+    setIsSaving(false);
     if (error) {
-      toast.error("Failed to save EMI details. Please try again.");
+      toast.error("Failed to save EMI details.");
       return;
     }
 
@@ -225,30 +253,16 @@ const Details = () => {
     navigate("/dashboard/emitracker");
   };
 
-  const handlePrepaymentChange = (month: number, amount: number) => {
-    const currentPrepayments = form.getValues("prepayments") || {};
-
-    const updatedPrepayments = {
-      ...currentPrepayments,
-      [month]: amount,
-    };
-
-    if (amount <= 0) {
-      delete updatedPrepayments[month];
-    }
-
-    form.setValue("prepayments", updatedPrepayments, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true,
-    });
-  };
-
-  console.log(loading, "loading");
   return (
     <Page
-      title="EMI Calculator"
+      title={isCreateMode ? "Add EMI" : "Edit EMI"}
       subTitle="Calculate your EMI with the calculator with all details"
+      breadcrumbs={[
+        { name: "All EMI Listing", to: "/dashboard/emitracker" },
+        {
+          name: isCreateMode ? "Add EMI" : "Edit EMI",
+        },
+      ]}
     >
       <Card
         title="Details"
@@ -285,9 +299,9 @@ const Details = () => {
                     <Input
                       field={field}
                       type="number"
-                      required
-                      placeholder="1000"
+                      placeholder="Loan Amount"
                       label="Loan Amount"
+                      required
                       onChange={(e) => {
                         const value = e.target.value;
                         const numValue = value === "" ? 0 : Number(value);
@@ -307,9 +321,9 @@ const Details = () => {
                     <Input
                       field={field}
                       type="number"
-                      required
-                      placeholder="0.1"
+                      placeholder="Rate of Interest (%)"
                       label="Rate of Interest (%)"
+                      required
                       onChange={(e) => {
                         const value = e.target.value;
                         const numValue = value === "" ? 0 : Number(value);
@@ -331,9 +345,9 @@ const Details = () => {
                     <Input
                       field={field}
                       type="number"
+                      placeholder="Tenure (Years)"
+                      label="Tenure (Years)"
                       required
-                      placeholder="1"
-                      label="tenure (Years)"
                       onChange={(e) => {
                         const value = e.target.value;
                         const numValue = value === "" ? 0 : Number(value);
@@ -353,8 +367,8 @@ const Details = () => {
                     <Input
                       field={field}
                       type="number"
-                      placeholder="0"
-                      label="Hike EMI by (%) every year"
+                      placeholder="Hike EMI by (%) every year"
+                      label="Hike % per Year"
                       onChange={(e) => {
                         const value = e.target.value;
                         const numValue = value === "" ? 0 : Number(value);
@@ -384,6 +398,7 @@ const Details = () => {
           </div>
         }
       />
+
       <Card
         title="EMI Breakdown"
         headerContent={
@@ -394,17 +409,28 @@ const Details = () => {
                 loanAmount,
                 rateOfInterest,
                 tenure * 12
-              ).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              ).toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
             </div>
             <div className="font-semibold">
               Total Interest: ₹{totalInterest.toLocaleString("en-IN")}
+            </div>
+            <div className="font-semibold">
+              Total Principal Paid: ₹
+              {totalPrincipalPaid.toLocaleString("en-IN")}
             </div>
           </div>
         }
         cardContent={
           <DataTable
             data={filteredTableData}
-            columns={getEmiTableColumns(handlePrepaymentChange, prepayments)}
+            columns={getEmiTableColumns(
+              handlePrepaymentChange,
+              prepayments,
+              handleFloatingRateChange,
+              floatingRates
+            )}
             onSearch={handleSearch}
           />
         }

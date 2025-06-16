@@ -111,7 +111,7 @@ const Details = () => {
   ] = watchedValues;
 
   const {
-    formState: { isValid, isDirty, errors },
+    formState: { isValid, isDirty },
   } = form;
 
   const handleUpdate = async () => {
@@ -175,9 +175,17 @@ const Details = () => {
     navigate("/dashboard/reminders");
   };
 
-  console.log(errors, "errors", isValid, isDirty);
   return (
-    <Page title="Reminder" subTitle="View and edit reminder details">
+    <Page
+      title={isCreateMode ? "Add Reminder" : "Edit Reminder"}
+      subTitle="View and edit reminder details"
+      breadcrumbs={[
+        { name: "All Reminder Listing", to: "/dashboard/reminders" },
+        {
+          name: isCreateMode ? "Add Reminder" : "Edit Reminder",
+        },
+      ]}
+    >
       <Card
         title="Details"
         cardContent={

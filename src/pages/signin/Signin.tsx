@@ -42,7 +42,7 @@ const Signin = () => {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
     const { emailaddress, password } = data;
-    const { error, data: loginData } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: emailaddress,
       password: password,
     });
@@ -54,7 +54,6 @@ const Signin = () => {
       return;
     }
 
-    console.log("Login successful:", loginData);
     navigate("/dashboard");
   };
 

@@ -46,7 +46,7 @@ const Signup = () => {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
     const { emailaddress, password, name } = data;
-    const { error, data: signupData } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: emailaddress,
       password: password,
       options: {
@@ -63,7 +63,6 @@ const Signup = () => {
       return;
     }
 
-    console.log("Signup successful:", signupData);
     navigate("/dashboard");
   };
 

@@ -233,7 +233,6 @@ const AddContributionModal = ({
         <DialogFooter className="flex gap-2">
           <Button
             type="button"
-            variant="outline"
             onClick={handleClose}
             disabled={isSaving}
             className="!bg-[var(--common-brand)] flex-1"

@@ -85,10 +85,6 @@ const GoalsListing = () => {
 
   // Calculate summary statistics
   const totalGoals = goals.length;
-  const completedGoals = goals.filter(
-    (goal) => goal.is_completed || goal.current_balance >= goal.target_amount
-  ).length;
-  const activeGoals = totalGoals - completedGoals;
   const totalTargetAmount = goals.reduce(
     (sum, goal) => sum + goal.target_amount,
     0
@@ -97,12 +93,7 @@ const GoalsListing = () => {
     (sum, goal) => sum + goal.current_balance,
     0
   );
-  const overallProgress =
-    totalTargetAmount > 0
-      ? Math.round((totalCurrentBalance / totalTargetAmount) * 100)
-      : 0;
 
-  console.log(activeGoals, overallProgress);
   return (
     <Page
       title="All Goals Listing"
