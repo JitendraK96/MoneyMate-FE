@@ -464,7 +464,16 @@ const CreateExpenseSheet = () => {
   }
 
   return (
-    <Page title={pageTitle} subTitle={pageSubtitle}>
+    <Page
+      title={pageTitle}
+      subTitle={pageSubtitle}
+      breadcrumbs={[
+        { name: "Expense Sheets", to: "/dashboard/expenses" },
+        {
+          name: isEditMode ? "Update Expense Sheet" : "Create Expense Sheet",
+        },
+      ]}
+    >
       <div className="space-y-6">
         {/* Sheet Details Form */}
         <Card

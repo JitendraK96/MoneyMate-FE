@@ -56,7 +56,7 @@ const Details = () => {
     } as z.infer<typeof BorrowingFormSchema>,
   });
 
-  const { data, loading } = useBorrowingDetails({
+  const { data } = useBorrowingDetails({
     id: id,
     userId: user?.id,
   });
@@ -106,7 +106,7 @@ const Details = () => {
   ] = watchedValues;
 
   const {
-    formState: { isValid, isDirty, errors },
+    formState: { isValid, isDirty },
   } = form;
 
   // Auto-populate borrowing amount based on tenure and EMI amount
@@ -298,12 +298,16 @@ const Details = () => {
   const progressPercentage =
     totalMonths > 0 ? Math.round((paidCount / totalMonths) * 100) : 0;
 
-  console.log(loading, "loading", errors, isValid, isDirty);
-
   return (
     <Page
-      title="Borrowing Tracker"
+      title={isCreateMode ? "Add Borrowing" : "Edit Borrowing"}
       subTitle="Track your borrowing and monthly EMI payments"
+      breadcrumbs={[
+        { name: "All Borrowing Listing", to: "/dashboard/borrowing" },
+        {
+          name: isCreateMode ? "Add Borrowing" : "Edit Borrowing",
+        },
+      ]}
     >
       <Card
         title="Details"
@@ -456,7 +460,6 @@ const Details = () => {
               disabled={!isValid || !isDirty}
               type="button"
               title={isCreateMode ? "Create Borrowing" : "Update Borrowing"}
-              variant={"outline"}
               className="!bg-[var(--common-brand)]"
               onClick={isCreateMode ? handleCreate : handleUpdate}
               isLoading={isSaving}

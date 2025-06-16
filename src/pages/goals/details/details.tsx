@@ -177,8 +177,14 @@ const Details = () => {
 
   return (
     <Page
-      title="Goals Tracker"
+      title={isCreateMode ? "Add Goal" : "Edit Goal"}
       subTitle="Track your savings goals and contributions"
+      breadcrumbs={[
+        { name: "All Goals Listing", to: "/dashboard/goals" },
+        {
+          name: isCreateMode ? "Add Goal" : "Edit Goal",
+        },
+      ]}
     >
       <Card
         title="Details"
@@ -316,7 +322,6 @@ const Details = () => {
               disabled={!isValid || !isDirty}
               type="button"
               title={isCreateMode ? "Create Goal" : "Update Goal"}
-              variant={"outline"}
               className="!bg-[var(--common-brand)] w-fit"
               onClick={isCreateMode ? handleCreate : handleUpdate}
               isLoading={isSaving}

@@ -42,7 +42,7 @@ const Signin = () => {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
     const { emailaddress, password } = data;
-    const { error, data: loginData } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: emailaddress,
       password: password,
     });
@@ -54,7 +54,6 @@ const Signin = () => {
       return;
     }
 
-    console.log("Login successful:", loginData);
     navigate("/dashboard");
   };
 
@@ -116,7 +115,6 @@ const Signin = () => {
             type="submit"
             isLoading={isLoading}
             title="Submit"
-            variant={"outline"}
             className="w-full !bg-[var(--common-brand)]"
           />
         </form>
@@ -129,7 +127,6 @@ const Signin = () => {
         <Separator className="flex-1 bg-[var(--common-seperator)] opacity-40" />
       </div>
       <Button
-        variant="outline"
         onClick={handleGoogleSignIn}
         type="button"
         title={

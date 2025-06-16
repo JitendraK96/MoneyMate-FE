@@ -133,8 +133,6 @@ const IncomeForm: React.FC = () => {
   // Determine if we're in edit mode
   const isEditMode = id;
   const isCreateMode = !id;
-  console.log(id, "OKOKOK");
-
   const form = useForm<z.infer<typeof IncomeFormSchema>>({
     resolver: zodResolver(IncomeFormSchema),
     defaultValues: {
@@ -185,11 +183,8 @@ const IncomeForm: React.FC = () => {
                 is_active: enhancedIncome.is_active,
               });
             }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error) {
-            console.log(
-              "Enhanced view not available, using basic income data",
-              error
-            );
             // Fallback to regular incomes table
             const { data: basicData, error: basicError } = await supabase
               .from("incomes")
@@ -304,7 +299,7 @@ const IncomeForm: React.FC = () => {
 
         if (error) throw error;
       } else if (isCreateMode) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("incomes")
           .insert([
             {
@@ -323,7 +318,6 @@ const IncomeForm: React.FC = () => {
           .single();
 
         if (error) throw error;
-        console.log(data, "data");
       }
 
       toast.success(
@@ -358,6 +352,12 @@ const IncomeForm: React.FC = () => {
           ? "Update your income source and budget allocation percentages."
           : "Add a new income source and set your budget allocation using the 50/30/20 rule."
       }
+      breadcrumbs={[
+        { name: "Income Management", to: "/dashboard/income" },
+        {
+          name: isCreateMode ? "Add New Income Source" : "Edit Income Source",
+        },
+      ]}
     >
       <Form {...form}>
         <Card

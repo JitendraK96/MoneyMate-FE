@@ -153,11 +153,8 @@ const CategoryAllocation: React.FC = () => {
           if (enhancedData && !error) {
             incomeData = enhancedData as EnhancedIncome;
           }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-          console.log(
-            "Enhanced view not available, using basic income data",
-            error
-          );
           // Fallback to regular incomes table
           const { data: basicData, error: basicError } = await supabase
             .from("incomes")
@@ -495,6 +492,12 @@ const CategoryAllocation: React.FC = () => {
       subTitle={`${income.source} • ${formatCurrency(
         income.monthly_amount
       )}/month • Allocate your income to specific categories using actual amounts within each budget bucket.`}
+      breadcrumbs={[
+        { name: "Income Management", to: "/dashboard/income" },
+        {
+          name: "Allocate to Categories",
+        },
+      ]}
     >
       <div className="flex flex-col gap-4 mt-4">
         {/* Summary Cards */}

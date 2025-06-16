@@ -46,7 +46,7 @@ const Signup = () => {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
     const { emailaddress, password, name } = data;
-    const { error, data: signupData } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: emailaddress,
       password: password,
       options: {
@@ -63,7 +63,6 @@ const Signup = () => {
       return;
     }
 
-    console.log("Signup successful:", signupData);
     navigate("/dashboard");
   };
 
@@ -137,7 +136,6 @@ const Signup = () => {
             type="submit"
             isLoading={isLoading}
             title="Create account"
-            variant={"outline"}
             className="w-full !bg-[var(--common-brand)]"
           />
         </form>
@@ -150,7 +148,6 @@ const Signup = () => {
         <Separator className="flex-1 bg-[var(--common-seperator)] opacity-40" />
       </div>
       <Button
-        variant="outline"
         type="button"
         onClick={handleGoogleSignUp}
         title={
