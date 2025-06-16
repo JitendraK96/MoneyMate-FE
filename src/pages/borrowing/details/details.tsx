@@ -456,7 +456,6 @@ const Details = () => {
               disabled={!isValid || !isDirty}
               type="button"
               title={isCreateMode ? "Create Borrowing" : "Update Borrowing"}
-              variant={"outline"}
               className="!bg-[var(--common-brand)]"
               onClick={isCreateMode ? handleCreate : handleUpdate}
               isLoading={isSaving}

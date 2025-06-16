@@ -316,7 +316,6 @@ const Details = () => {
               disabled={!isValid || !isDirty}
               type="button"
               title={isCreateMode ? "Create Goal" : "Update Goal"}
-              variant={"outline"}
               className="!bg-[var(--common-brand)] w-fit"
               onClick={isCreateMode ? handleCreate : handleUpdate}
               isLoading={isSaving}

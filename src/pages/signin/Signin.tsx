@@ -116,7 +116,6 @@ const Signin = () => {
             type="submit"
             isLoading={isLoading}
             title="Submit"
-            variant={"outline"}
             className="w-full !bg-[var(--common-brand)]"
           />
         </form>
@@ -129,7 +128,6 @@ const Signin = () => {
         <Separator className="flex-1 bg-[var(--common-seperator)] opacity-40" />
       </div>
       <Button
-        variant="outline"
         onClick={handleGoogleSignIn}
         type="button"
         title={

@@ -137,7 +137,6 @@ const Signup = () => {
             type="submit"
             isLoading={isLoading}
             title="Create account"
-            variant={"outline"}
             className="w-full !bg-[var(--common-brand)]"
           />
         </form>
@@ -150,7 +149,6 @@ const Signup = () => {
         <Separator className="flex-1 bg-[var(--common-seperator)] opacity-40" />
       </div>
       <Button
-        variant="outline"
         type="button"
         onClick={handleGoogleSignUp}
         title={

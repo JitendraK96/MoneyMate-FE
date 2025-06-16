@@ -106,8 +106,10 @@ const DataTable = ({ columns, data, onSearch }: any) => {
               variant="outline"
               className="ml-auto text-[var(--content-textprimary)] font-size-extra-small !border-[var(--common-brand)] !bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             >
-              <img src={Slider} alt="Logo" className="max-w-[200px]" />
-              {/* Columns <ChevronDown /> */}
+              <img src={Slider} alt="Logo" className="w-[20px]" />
+              <span className="text-[var(--common-brand)] font-size-small">
+                Columns
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent

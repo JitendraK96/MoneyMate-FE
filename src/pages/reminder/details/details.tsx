@@ -479,7 +479,6 @@ const Details = () => {
               disabled={!isValid || !isDirty}
               type="button"
               title={isCreateMode ? "Create Reminder" : "Update Reminder"}
-              variant={"outline"}
               className="!bg-[var(--common-brand)]"
               onClick={isCreateMode ? handleCreate : handleUpdate}
               isLoading={isSaving}

@@ -377,7 +377,6 @@ const Details = () => {
               disabled={!isValid || !isDirty}
               type="button"
               title={isCreateMode ? "Create EMI" : "Update EMI"}
-              variant={"outline"}
               className="max-w-[130px] !bg-[var(--common-brand)]"
               onClick={isCreateMode ? handleCreate : handleUpdate}
               isLoading={isSaving}
