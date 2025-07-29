@@ -90,8 +90,8 @@ const items = [
         url: "/dashboard/reminders",
       },
       {
-        title: "Upload Statement",
-        url: "/dashboard/uploadstatement",
+        title: "Redact PDF",
+        url: "/dashboard/redactor",
       },
     ],
   },

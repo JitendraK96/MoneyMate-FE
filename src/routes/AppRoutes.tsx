@@ -18,6 +18,7 @@ import IncomeForm from "@/pages/income/details";
 import CategoryAllocation from "@/pages/income/categoryallocation";
 import ExpenseDetails from "@/pages/expenses/details/details";
 import ExpenseListing from "@/pages/expenses/listings";
+import Redactor from "@/pages/redactor";
 
 const AppRoutes = () => {
   return (
@@ -51,6 +52,7 @@ const AppRoutes = () => {
         <Route path="reminders/create" element={<ReminderDetails />} />
         <Route path="reminders/:id" element={<ReminderDetails />} />
         <Route path="uploadstatement" element={<Uploadstatement />} />
+        <Route path="redactor" element={<Redactor />} />
         <Route path="borrowing" element={<BorrowingListing />} />
         <Route path="borrowing/:id" element={<BorrowingDetails />} />
         <Route path="borrowing/create" element={<BorrowingDetails />} />
