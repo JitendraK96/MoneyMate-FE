@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { RootState } from "@/store";
 import { setList } from "@/store/slices/borrowingSlice";
 import { useUser } from "@/context/UserContext";
+import { decryptBorrowingData } from "@/utils/encryption";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
 import { CirclePlus } from "lucide-react";
@@ -34,7 +35,27 @@ const EmiListing = () => {
         return;
       }
 
-      dispatch(setList(data || []));
+      const decryptedData = (data || []).map(item => {
+        try {
+          const decrypted = decryptBorrowingData({
+            ...item,
+            emi_amount: item.emi_amount,
+            borrowing_amount: item.borrowing_amount,
+            payment_details: item.payment_details || "",
+          });
+          return {
+            ...item,
+            emi_amount: decrypted.emi_amount,
+            borrowing_amount: decrypted.borrowing_amount,
+            payment_details: decrypted.payment_details,
+          };
+        } catch (decryptError) {
+          console.error("Error decrypting borrowing data for item:", item.id, decryptError);
+          return item;
+        }
+      });
+
+      dispatch(setList(decryptedData));
     };
 
     fetchBorrowings();

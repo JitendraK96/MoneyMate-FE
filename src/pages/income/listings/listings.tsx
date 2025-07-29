@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { decryptIncomeData, decryptAllocationData } from "@/utils/encryption";
 import Page from "@/components/page";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
@@ -83,6 +84,29 @@ const IncomeManagement = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Helper function to decrypt category allocations
+  const decryptCategoryAllocations = (categoryAllocations: any[]) => {
+    return categoryAllocations.map((allocation) => {
+      let decryptedAmount = allocation.allocation_amount;
+      try {
+        if (typeof allocation.allocation_amount === 'string') {
+          const decrypted = decryptAllocationData({
+            allocation_amount: allocation.allocation_amount,
+          });
+          decryptedAmount = decrypted.allocation_amount;
+        }
+      } catch (decryptError) {
+        console.error("Error decrypting allocation data:", allocation, decryptError);
+        // Fallback to original value if decryption fails
+        decryptedAmount = parseFloat(allocation.allocation_amount) || 0;
+      }
+      return {
+        ...allocation,
+        allocation_amount: decryptedAmount,
+      };
+    });
+  };
+
   useEffect(() => {
     if (user?.id) {
       fetchData();
@@ -113,38 +137,134 @@ const IncomeManagement = () => {
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
-        // Convert to enhanced format
-        incomesData = data?.map((income) => ({
-          ...income,
-          monthly_amount: calculateMonthlyAmount(
-            income.amount,
-            income.frequency
-          ),
-          needs_category_allocations: [],
-          wants_category_allocations: [],
-          savings_category_allocations: [],
-          unallocated_needs_percentage: income.needs_percentage,
-          unallocated_wants_percentage: income.wants_percentage,
-          unallocated_savings_percentage: income.savings_percentage,
-          unallocated_needs_amount:
-            (calculateMonthlyAmount(income.amount, income.frequency) *
-              income.needs_percentage) /
-            100,
-          unallocated_wants_amount:
-            (calculateMonthlyAmount(income.amount, income.frequency) *
-              income.wants_percentage) /
-            100,
-          unallocated_savings_amount:
-            (calculateMonthlyAmount(income.amount, income.frequency) *
-              income.savings_percentage) /
-            100,
-        }));
+        // Convert to enhanced format with decryption
+        incomesData = data?.map((income) => {
+          let decryptedAmount = income.amount;
+          try {
+            const decrypted = decryptIncomeData({
+              ...income,
+              amount: income.amount,
+            });
+            decryptedAmount = decrypted.amount;
+          } catch (decryptError) {
+            console.error("Error decrypting income data:", income.id, decryptError);
+          }
+
+          return {
+            ...income,
+            amount: decryptedAmount,
+            monthly_amount: calculateMonthlyAmount(
+              decryptedAmount,
+              income.frequency
+            ),
+            needs_category_allocations: [],
+            wants_category_allocations: [],
+            savings_category_allocations: [],
+            unallocated_needs_percentage: income.needs_percentage,
+            unallocated_wants_percentage: income.wants_percentage,
+            unallocated_savings_percentage: income.savings_percentage,
+            unallocated_needs_amount:
+              (calculateMonthlyAmount(decryptedAmount, income.frequency) *
+                income.needs_percentage) /
+              100,
+            unallocated_wants_amount:
+              (calculateMonthlyAmount(decryptedAmount, income.frequency) *
+                income.wants_percentage) /
+              100,
+            unallocated_savings_amount:
+              (calculateMonthlyAmount(decryptedAmount, income.frequency) *
+                income.savings_percentage) /
+              100,
+          };
+        });
         incomesError = fallbackError;
       }
 
       if (incomesError) throw incomesError;
 
-      setIncomes(incomesData || []);
+      // Decrypt data from enhanced view if needed
+      const processedIncomes = (incomesData || []).map((income) => {
+        let decryptedAmount = income.amount;
+        let processedCategoryAllocations = income.category_allocations || [];
+        
+        try {
+          // Decrypt main income amount
+          if (typeof income.amount === 'string') {
+            const decrypted = decryptIncomeData({
+              ...income,
+              amount: income.amount,
+            });
+            decryptedAmount = decrypted.amount;
+          }
+          
+          // Decrypt category allocations
+          if (processedCategoryAllocations.length > 0) {
+            processedCategoryAllocations = decryptCategoryAllocations(processedCategoryAllocations);
+          }
+        } catch (decryptError) {
+          console.error("Error decrypting enhanced view income data:", income.id, decryptError);
+        }
+        
+        // Recalculate monthly amount with decrypted value
+        const newMonthlyAmount = calculateMonthlyAmount(decryptedAmount, income.frequency);
+        
+        // Group category allocations by bucket
+        const needsAllocations = processedCategoryAllocations.filter(
+          (alloc: any) => alloc.category_bucket === 'needs'
+        );
+        const wantsAllocations = processedCategoryAllocations.filter(
+          (alloc: any) => alloc.category_bucket === 'wants'
+        );
+        const savingsAllocations = processedCategoryAllocations.filter(
+          (alloc: any) => alloc.category_bucket === 'savings'
+        );
+        
+        // Calculate allocated amounts per bucket
+        const needsAllocatedAmount = needsAllocations.reduce((sum: number, alloc: any) => sum + alloc.allocation_amount, 0);
+        const wantsAllocatedAmount = wantsAllocations.reduce((sum: number, alloc: any) => sum + alloc.allocation_amount, 0);
+        const savingsAllocatedAmount = savingsAllocations.reduce((sum: number, alloc: any) => sum + alloc.allocation_amount, 0);
+        
+        // Calculate bucket totals
+        const needsTotalAmount = (newMonthlyAmount * income.needs_percentage) / 100;
+        const wantsTotalAmount = (newMonthlyAmount * income.wants_percentage) / 100;
+        const savingsTotalAmount = (newMonthlyAmount * income.savings_percentage) / 100;
+        
+        return {
+          ...income,
+          amount: decryptedAmount,
+          monthly_amount: newMonthlyAmount,
+          category_allocations: processedCategoryAllocations,
+          needs_category_allocations: needsAllocations.map((alloc: any) => ({
+            category_id: alloc.category_id,
+            category_name: alloc.category_name,
+            category_color: alloc.category_color,
+            allocated_percentage: alloc.allocation_percentage,
+            allocated_amount: alloc.allocation_amount,
+          })),
+          wants_category_allocations: wantsAllocations.map((alloc: any) => ({
+            category_id: alloc.category_id,
+            category_name: alloc.category_name,
+            category_color: alloc.category_color,
+            allocated_percentage: alloc.allocation_percentage,
+            allocated_amount: alloc.allocation_amount,
+          })),
+          savings_category_allocations: savingsAllocations.map((alloc: any) => ({
+            category_id: alloc.category_id,
+            category_name: alloc.category_name,
+            category_color: alloc.category_color,
+            allocated_percentage: alloc.allocation_percentage,
+            allocated_amount: alloc.allocation_amount,
+          })),
+          unallocated_needs_percentage: needsTotalAmount > 0 ? ((needsTotalAmount - needsAllocatedAmount) / needsTotalAmount) * 100 : income.needs_percentage,
+          unallocated_wants_percentage: wantsTotalAmount > 0 ? ((wantsTotalAmount - wantsAllocatedAmount) / wantsTotalAmount) * 100 : income.wants_percentage,
+          unallocated_savings_percentage: savingsTotalAmount > 0 ? ((savingsTotalAmount - savingsAllocatedAmount) / savingsTotalAmount) * 100 : income.savings_percentage,
+          unallocated_needs_amount: needsTotalAmount - needsAllocatedAmount,
+          unallocated_wants_amount: wantsTotalAmount - wantsAllocatedAmount,
+          unallocated_savings_amount: savingsTotalAmount - savingsAllocatedAmount,
+        };
+      });
+
+      setIncomes(processedIncomes);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data. Please try again.");
@@ -191,6 +311,7 @@ const IncomeManagement = () => {
 
   const handleToggleActive = async (income: EnhancedIncome) => {
     try {
+      // We only need to update the is_active field, no encryption needed
       const { error } = await supabase
         .from("incomes")
         .update({ is_active: !income.is_active })

@@ -15,6 +15,7 @@ import DataTable from "@/components/table";
 import { getEmiTableColumns } from "./emiTableColumnDefs";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { encryptEmiData } from "@/utils/encryption";
 
 interface EmiTableRow {
   month: number;
@@ -203,15 +204,21 @@ const Details = () => {
 
   const handleUpdate = async () => {
     setIsSaving(true);
+    
+    const encryptedData = encryptEmiData({
+      loan_amount: loanAmount,
+      prepayments,
+    });
+    
     const { error } = await supabase
       .from("emi_details")
       .update({
         name,
-        loan_amount: loanAmount,
+        loan_amount: encryptedData.loan_amount,
         rate_of_interest: rateOfInterest,
         tenure,
         hike_percentage: hikePercentage,
-        prepayments,
+        prepayments: encryptedData.prepayments,
         floating_rates: floatingRates, // ✅ store to DB
       })
       .eq("user_id", user.id)
@@ -229,15 +236,21 @@ const Details = () => {
 
   const handleCreate = async () => {
     setIsSaving(true);
+    
+    const encryptedData = encryptEmiData({
+      loan_amount: loanAmount,
+      prepayments,
+    });
+    
     const { error } = await supabase.from("emi_details").insert([
       {
         user_id: user.id,
         name,
-        loan_amount: loanAmount,
+        loan_amount: encryptedData.loan_amount,
         rate_of_interest: rateOfInterest,
         tenure,
         hike_percentage: hikePercentage,
-        prepayments,
+        prepayments: encryptedData.prepayments,
         floating_rates: floatingRates,
         is_paid: false,
       },

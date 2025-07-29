@@ -11,12 +11,12 @@ CREATE TABLE borrowing_details (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     start_date DATE NOT NULL,
-    borrowing_amount DECIMAL(15,2) NOT NULL CHECK (borrowing_amount > 0),
+    borrowing_amount TEXT NOT NULL,
     tenure INTEGER NOT NULL CHECK (tenure > 0),
-    emi_amount DECIMAL(15,2) NOT NULL CHECK (emi_amount > 0),
+    emi_amount TEXT NOT NULL,
     payment_info TEXT,
     paid_months JSONB NOT NULL DEFAULT '{}',
-    payment_details JSONB NOT NULL DEFAULT '{}',
+    payment_details TEXT NOT NULL DEFAULT '',
     is_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -28,9 +28,8 @@ CREATE INDEX idx_borrowing_details_is_completed ON borrowing_details(is_complete
 CREATE INDEX idx_borrowing_details_start_date ON borrowing_details(start_date);
 CREATE INDEX idx_borrowing_details_title ON borrowing_details(title);
 
--- Create GIN index for JSONB columns
+-- Create GIN index for JSONB columns (only paid_months now, payment_details is encrypted TEXT)
 CREATE INDEX idx_borrowing_details_paid_months ON borrowing_details USING GIN (paid_months);
-CREATE INDEX idx_borrowing_details_payment_details ON borrowing_details USING GIN (payment_details);
 
 -- Create unique constraint for borrowing title per user
 CREATE UNIQUE INDEX idx_borrowing_details_user_title_unique ON borrowing_details(user_id, title);

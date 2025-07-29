@@ -17,6 +17,7 @@ import { getContributionTableColumns } from "./columnDefs";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import AddContributionModal from "../modals/AddContibutionModal";
+import { encryptGoalData } from "@/utils/encryption";
 
 interface ContributionTableRow {
   id: string;
@@ -116,13 +117,19 @@ const Details = () => {
 
   const handleUpdate = async () => {
     setIsSaving(true);
+    
+    const encryptedData = encryptGoalData({
+      target_amount: targetAmount,
+      current_balance: currentBalance,
+    });
+    
     const { error } = await supabase
       .from("goals")
       .update({
         name: name,
         description: description,
-        target_amount: targetAmount,
-        current_balance: currentBalance,
+        target_amount: encryptedData.target_amount,
+        current_balance: encryptedData.current_balance,
         target_date: targetDate?.toISOString().split("T")[0],
         is_completed: currentBalance >= targetAmount,
       })
@@ -141,13 +148,19 @@ const Details = () => {
 
   const handleCreate = async () => {
     setIsSaving(true);
+    
+    const encryptedData = encryptGoalData({
+      target_amount: targetAmount,
+      current_balance: currentBalance,
+    });
+    
     const { error } = await supabase.from("goals").insert([
       {
         user_id: user.id,
         name: name,
         description: description,
-        target_amount: targetAmount,
-        current_balance: currentBalance,
+        target_amount: encryptedData.target_amount,
+        current_balance: encryptedData.current_balance,
         target_date: targetDate?.toISOString().split("T")[0],
         is_completed: false,
       },

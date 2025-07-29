@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS contributions CASCADE;
 CREATE TABLE contributions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
-    amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
+    amount TEXT NOT NULL,
     contribution_date DATE NOT NULL,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -18,7 +18,7 @@ CREATE TABLE contributions (
 -- Create indexes for performance
 CREATE INDEX idx_contributions_goal_id ON contributions(goal_id);
 CREATE INDEX idx_contributions_contribution_date ON contributions(contribution_date);
-CREATE INDEX idx_contributions_amount ON contributions(amount);
+-- Removed amount index since it's now encrypted TEXT
 
 -- Composite index for common queries
 CREATE INDEX idx_contributions_goal_date ON contributions(goal_id, contribution_date);
@@ -51,33 +51,14 @@ CREATE POLICY "Users can delete contributions for their own goals" ON contributi
 CREATE TRIGGER update_contributions_updated_at BEFORE UPDATE ON contributions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Create trigger to update goal current_balance on contribution changes
-CREATE OR REPLACE FUNCTION update_goal_balance()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE goals 
-        SET current_balance = current_balance + NEW.amount,
-            updated_at = NOW()
-        WHERE id = NEW.goal_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'UPDATE' THEN
-        UPDATE goals 
-        SET current_balance = current_balance - OLD.amount + NEW.amount,
-            updated_at = NOW()
-        WHERE id = NEW.goal_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE goals 
-        SET current_balance = current_balance - OLD.amount,
-            updated_at = NOW()
-        WHERE id = OLD.goal_id;
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_update_goal_balance
-    AFTER INSERT OR UPDATE OR DELETE ON contributions
-    FOR EACH ROW EXECUTE FUNCTION update_goal_balance();
+-- Note: Auto-update trigger disabled since amounts are now encrypted
+-- Goal balance will be calculated on the frontend from decrypted contribution amounts
+-- 
+-- CREATE OR REPLACE FUNCTION update_goal_balance()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- This function is disabled because amounts are now encrypted
+--     -- Balance calculation will be handled in the application layer
+--     RETURN COALESCE(NEW, OLD);
+-- END;
+-- $$ LANGUAGE plpgsql;

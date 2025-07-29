@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { encryptTransactionData, decryptTransactionData } from "@/utils/encryption";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -97,9 +98,28 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   // Populate form when transaction changes
   useEffect(() => {
     if (transaction) {
+      let decryptedAmount = transaction.amount || 0;
+      
+      // If amount is encrypted (string), decrypt it
+      if (typeof transaction.amount === 'string' && (transaction.amount as string).length > 10) {
+        try {
+          const decrypted = decryptTransactionData({
+            amount: transaction.amount,
+          });
+          decryptedAmount = decrypted.amount;
+        } catch (decryptError) {
+          console.error("Error decrypting transaction amount:", transaction.id, decryptError);
+          // Fallback to parsing the amount if it's a numeric string
+          decryptedAmount = parseFloat(transaction.amount) || 0;
+        }
+      } else {
+        // Use amount directly if it's already a number
+        decryptedAmount = transaction.amount || 0;
+      }
+      
       const formData = {
         description: transaction.description || "",
-        amount: transaction.absolute_amount || 0,
+        amount: decryptedAmount,
         transaction_date: transaction.transaction_date
           ? new Date(transaction.transaction_date)
           : new Date(),
@@ -136,9 +156,14 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
     setIsSaving(true);
     try {
+      // Encrypt the transaction amount
+      const encryptedTransaction = encryptTransactionData({
+        amount: values.amount,
+      });
+      
       const updateData = {
         description: values.description,
-        amount: values.amount,
+        amount: encryptedTransaction.amount,
         transaction_date: values.transaction_date.toISOString().split("T")[0],
         category_id:
           values.category_id && values.category_id !== ""

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { decryptBorrowingData } from "@/utils/encryption";
 
 interface BorrowingDetailsData {
   id: string;
@@ -66,14 +67,34 @@ export const useBorrowingDetails = ({
         throw fetchError;
       }
 
-      // Ensure payment_details is always an object, even if null in database
-      const processedData = {
-        ...borrowingData,
-        payment_details: borrowingData.payment_details || {},
-        paid_months: borrowingData.paid_months || {},
-      };
+      // Decrypt the encrypted fields and ensure payment_details is always an object
+      try {
+        const decryptedData = decryptBorrowingData({
+          ...borrowingData,
+          emi_amount: borrowingData.emi_amount,
+          borrowing_amount: borrowingData.borrowing_amount,
+          payment_details: borrowingData.payment_details || "",
+        });
 
-      setData(processedData);
+        const processedData = {
+          ...borrowingData,
+          emi_amount: decryptedData.emi_amount,
+          borrowing_amount: decryptedData.borrowing_amount,
+          payment_details: decryptedData.payment_details || {},
+          paid_months: borrowingData.paid_months || {},
+        };
+
+        setData(processedData);
+      } catch (decryptError) {
+        console.error("Error decrypting borrowing data:", decryptError);
+        // Fallback to original data if decryption fails
+        const processedData = {
+          ...borrowingData,
+          payment_details: borrowingData.payment_details || {},
+          paid_months: borrowingData.paid_months || {},
+        };
+        setData(processedData);
+      }
     } catch (err: any) {
       console.error("Error fetching borrowing details:", err);
       setError(err.message || "Failed to fetch borrowing details");

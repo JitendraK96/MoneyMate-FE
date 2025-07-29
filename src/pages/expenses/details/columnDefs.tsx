@@ -31,8 +31,7 @@ export interface TransactionWithDetails {
   expense_sheet_name: string;
   expense_sheet_id: string;
   is_active: boolean;
-  signed_amount: number;
-  absolute_amount: number;
+  // Note: signed_amount and absolute_amount removed - calculated from decrypted amount
   user_id: string;
   category_id?: string;
   payee_id?: string;
@@ -96,7 +95,7 @@ export const getTransactionColumns = (
     },
   },
   {
-    accessorKey: "absolute_amount",
+    accessorKey: "amount",
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -109,7 +108,7 @@ export const getTransactionColumns = (
       </Button>
     ),
     cell: ({ row }) => {
-      const { absolute_amount, transaction_type } = row.original;
+      const { amount, transaction_type } = row.original;
       const isExpense = transaction_type === "expense";
 
       return (
@@ -121,7 +120,7 @@ export const getTransactionColumns = (
           }`}
         >
           {isExpense ? "-" : "+"}₹
-          {absolute_amount.toLocaleString("en-IN", {
+          {amount.toLocaleString("en-IN", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}

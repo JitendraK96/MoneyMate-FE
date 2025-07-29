@@ -9,11 +9,11 @@ CREATE TABLE emi_details (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    loan_amount DECIMAL(15,2) NOT NULL CHECK (loan_amount > 0),
+    loan_amount TEXT NOT NULL,
     rate_of_interest DECIMAL(5,4) NOT NULL CHECK (rate_of_interest >= 0),
     tenure INTEGER NOT NULL CHECK (tenure > 0),
     hike_percentage DECIMAL(5,4) NOT NULL DEFAULT 0 CHECK (hike_percentage >= 0),
-    prepayments JSONB NOT NULL DEFAULT '{}',
+    prepayments TEXT NOT NULL DEFAULT '',
     floating_rates JSONB NOT NULL DEFAULT '{}',
     is_paid BOOLEAN NOT NULL DEFAULT FALSE,
     is_compound_interest BOOLEAN NOT NULL DEFAULT FALSE,
@@ -26,8 +26,7 @@ CREATE INDEX idx_emi_details_user_id ON emi_details(user_id);
 CREATE INDEX idx_emi_details_is_paid ON emi_details(is_paid);
 CREATE INDEX idx_emi_details_name ON emi_details(name);
 
--- Create GIN index for JSONB columns
-CREATE INDEX idx_emi_details_prepayments ON emi_details USING GIN (prepayments);
+-- Create GIN index for JSONB columns (only floating_rates now, prepayments is encrypted TEXT)
 CREATE INDEX idx_emi_details_floating_rates ON emi_details USING GIN (floating_rates);
 
 -- Create unique constraint for EMI name per user

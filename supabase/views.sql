@@ -23,16 +23,17 @@ JOIN expense_sheets es ON t.expense_sheet_id = es.id
 WHERE t.is_active = TRUE;
 
 -- 2. Expense Sheets with Summary View
--- Purpose: Expense sheets with computed summary statistics
+-- Purpose: Expense sheets with basic metadata (amounts calculated on frontend due to encryption)
 CREATE VIEW expense_sheets_with_summary AS
 SELECT 
     es.*,
     COALESCE(stats.total_transactions, 0) as total_transactions,
     COALESCE(stats.expense_transactions, 0) as expense_transactions,
-    COALESCE(stats.total_expenses, 0) as total_expenses,
-    COALESCE(stats.needs_expenses, 0) as needs_expenses,
-    COALESCE(stats.wants_expenses, 0) as wants_expenses,
-    COALESCE(stats.savings_expenses, 0) as savings_expenses,
+    -- Note: Amount summaries removed due to encrypted amounts - calculated on frontend
+    0 as total_expenses,
+    0 as needs_expenses,
+    0 as wants_expenses,  
+    0 as savings_expenses,
     stats.first_transaction_date,
     stats.last_transaction_date
 FROM expense_sheets es
@@ -41,14 +42,9 @@ LEFT JOIN (
         t.expense_sheet_id,
         COUNT(*) as total_transactions,
         COUNT(CASE WHEN t.transaction_type = 'expense' THEN 1 END) as expense_transactions,
-        COALESCE(SUM(CASE WHEN t.transaction_type = 'expense' THEN t.absolute_amount END), 0) as total_expenses,
-        COALESCE(SUM(CASE WHEN t.transaction_type = 'expense' AND c.bucket = 'needs' THEN t.absolute_amount END), 0) as needs_expenses,
-        COALESCE(SUM(CASE WHEN t.transaction_type = 'expense' AND c.bucket = 'wants' THEN t.absolute_amount END), 0) as wants_expenses,
-        COALESCE(SUM(CASE WHEN t.transaction_type = 'expense' AND c.bucket = 'savings' THEN t.absolute_amount END), 0) as savings_expenses,
         MIN(t.transaction_date) as first_transaction_date,
         MAX(t.transaction_date) as last_transaction_date
     FROM transactions t
-    LEFT JOIN categories c ON t.category_id = c.id
     WHERE t.is_active = TRUE
     GROUP BY t.expense_sheet_id
 ) stats ON es.id = stats.expense_sheet_id

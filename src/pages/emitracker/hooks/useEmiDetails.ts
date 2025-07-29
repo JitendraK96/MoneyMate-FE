@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { decryptEmiData } from "@/utils/encryption";
 
 export interface EmiDetails {
   id: string;
@@ -42,7 +43,21 @@ export const useEmiDetails = ({ id, userId }: UseEmiDetailsProps) => {
         console.error("Error fetching EMI details:", error.message);
         setData(null);
       } else {
-        setData(data as EmiDetails);
+        try {
+          const decryptedData = decryptEmiData({
+            ...data,
+            loan_amount: data.loan_amount,
+            prepayments: data.prepayments,
+          });
+          setData({
+            ...data,
+            loan_amount: decryptedData.loan_amount,
+            prepayments: decryptedData.prepayments,
+          } as EmiDetails);
+        } catch (decryptError) {
+          console.error("Error decrypting EMI data:", decryptError);
+          setData(data as EmiDetails);
+        }
       }
 
       setLoading(false);
