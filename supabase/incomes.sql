@@ -10,7 +10,7 @@ CREATE TABLE incomes (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     source VARCHAR(255) NOT NULL,
     description TEXT,
-    amount DECIMAL(15,2) NOT NULL CHECK (amount >= 0),
+    amount TEXT NOT NULL,
     frequency VARCHAR(20) NOT NULL CHECK (frequency IN ('monthly', 'yearly', 'weekly', 'bi-weekly')),
     needs_percentage DECIMAL(5,2) NOT NULL DEFAULT 0 CHECK (needs_percentage >= 0 AND needs_percentage <= 100),
     wants_percentage DECIMAL(5,2) NOT NULL DEFAULT 0 CHECK (wants_percentage >= 0 AND wants_percentage <= 100),

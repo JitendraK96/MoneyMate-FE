@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { RootState } from "@/store";
 import { setEmiList } from "@/store/slices/emiDetailsSlice";
 import { useUser } from "@/context/UserContext";
+import { decryptEmiData } from "@/utils/encryption";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
 import { CirclePlus } from "lucide-react";
@@ -34,7 +35,25 @@ const EmiListing = () => {
         return;
       }
 
-      dispatch(setEmiList(data || []));
+      const decryptedData = (data || []).map(item => {
+        try {
+          const decrypted = decryptEmiData({
+            ...item,
+            loan_amount: item.loan_amount,
+            prepayments: item.prepayments,
+          });
+          return {
+            ...item,
+            loan_amount: decrypted.loan_amount,
+            prepayments: decrypted.prepayments,
+          };
+        } catch (decryptError) {
+          console.error("Error decrypting EMI data for item:", item.id, decryptError);
+          return item;
+        }
+      });
+
+      dispatch(setEmiList(decryptedData));
     };
 
     fetchEmiDetails();

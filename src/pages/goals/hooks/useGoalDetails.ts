@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { decryptGoalData, decryptContributionData } from "@/utils/encryption";
 
 interface GoalDetailsData {
   id: string;
@@ -76,13 +77,48 @@ export const useGoalDetails = ({
         console.warn("Error fetching contributions:", contributionsError);
       }
 
-      // Ensure contributions is always an array
-      const processedData = {
-        ...goalData,
-        contributions: contributionsData || [],
-      };
+      // Decrypt goal data
+      try {
+        const decryptedGoalData = decryptGoalData({
+          ...goalData,
+          target_amount: goalData.target_amount,
+          current_balance: goalData.current_balance,
+        });
 
-      setData(processedData);
+        // Decrypt contributions data
+        const decryptedContributions = (contributionsData || []).map(contribution => {
+          try {
+            const decryptedContribution = decryptContributionData({
+              ...contribution,
+              amount: contribution.amount,
+            });
+            return {
+              ...contribution,
+              amount: decryptedContribution.amount,
+            };
+          } catch (decryptError) {
+            console.error("Error decrypting contribution:", contribution.id, decryptError);
+            return contribution;
+          }
+        });
+
+        const processedData = {
+          ...goalData,
+          target_amount: decryptedGoalData.target_amount,
+          current_balance: decryptedGoalData.current_balance,
+          contributions: decryptedContributions,
+        };
+
+        setData(processedData);
+      } catch (decryptError) {
+        console.error("Error decrypting goal data:", decryptError);
+        // Fallback to original data if decryption fails
+        const processedData = {
+          ...goalData,
+          contributions: contributionsData || [],
+        };
+        setData(processedData);
+      }
     } catch (err: any) {
       console.error("Error fetching goal details:", err);
       setError(err.message || "Failed to fetch goal details");

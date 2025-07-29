@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { decryptIncomeData, encryptAllocationData, decryptAllocationData } from "@/utils/encryption";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -151,7 +152,96 @@ const CategoryAllocation: React.FC = () => {
             .single();
 
           if (enhancedData && !error) {
-            incomeData = enhancedData as EnhancedIncome;
+            // Decrypt enhanced view data if needed
+            let processedEnhancedData = enhancedData;
+            let processedCategoryAllocations = enhancedData.category_allocations || [];
+            
+            // Decrypt main income amount
+            if (typeof enhancedData.amount === 'string') {
+              try {
+                const decrypted = decryptIncomeData({
+                  ...enhancedData,
+                  amount: enhancedData.amount,
+                });
+                const decryptedAmount = decrypted.amount;
+                const frequency = enhancedData.frequency;
+                const multipliers: Record<string, number> = {
+                  monthly: 1,
+                  yearly: 1 / 12,
+                  weekly: 52 / 12,
+                  "bi-weekly": 26 / 12,
+                };
+                const monthlyAmount = decryptedAmount * (multipliers[frequency] || 1);
+                
+                processedEnhancedData = {
+                  ...enhancedData,
+                  amount: decryptedAmount,
+                  monthly_amount: monthlyAmount,
+                };
+              } catch (decryptError) {
+                console.error("Error decrypting enhanced view income data:", enhancedData.id, decryptError);
+              }
+            }
+            
+            // Decrypt category allocations
+            if (processedCategoryAllocations.length > 0) {
+              processedCategoryAllocations = processedCategoryAllocations.map((allocation: any) => {
+                let decryptedAmount = allocation.allocation_amount;
+                try {
+                  if (typeof allocation.allocation_amount === 'string') {
+                    const decrypted = decryptAllocationData({
+                      allocation_amount: allocation.allocation_amount,
+                    });
+                    decryptedAmount = decrypted.allocation_amount;
+                  }
+                } catch (decryptError) {
+                  console.error("Error decrypting allocation data:", allocation, decryptError);
+                  // Fallback to original value if decryption fails
+                  decryptedAmount = parseFloat(allocation.allocation_amount) || 0;
+                }
+                return {
+                  ...allocation,
+                  allocation_amount: decryptedAmount,
+                };
+              });
+            }
+            
+            // Group category allocations by bucket
+            const needsAllocations = processedCategoryAllocations.filter(
+              (alloc: any) => alloc.category_bucket === 'needs'
+            );
+            const wantsAllocations = processedCategoryAllocations.filter(
+              (alloc: any) => alloc.category_bucket === 'wants'
+            );
+            const savingsAllocations = processedCategoryAllocations.filter(
+              (alloc: any) => alloc.category_bucket === 'savings'
+            );
+            
+            // Convert to enhanced format with proper allocations
+            incomeData = {
+              ...processedEnhancedData,
+              needs_category_allocations: needsAllocations.map((alloc: any) => ({
+                category_id: alloc.category_id,
+                category_name: alloc.category_name,
+                category_color: alloc.category_color,
+                allocated_percentage: alloc.allocation_percentage,
+                allocated_amount: alloc.allocation_amount,
+              })),
+              wants_category_allocations: wantsAllocations.map((alloc: any) => ({
+                category_id: alloc.category_id,
+                category_name: alloc.category_name,
+                category_color: alloc.category_color,
+                allocated_percentage: alloc.allocation_percentage,
+                allocated_amount: alloc.allocation_amount,
+              })),
+              savings_category_allocations: savingsAllocations.map((alloc: any) => ({
+                category_id: alloc.category_id,
+                category_name: alloc.category_name,
+                category_color: alloc.category_color,
+                allocated_percentage: alloc.allocation_percentage,
+                allocated_amount: alloc.allocation_amount,
+              })),
+            } as EnhancedIncome;
           }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
@@ -165,6 +255,18 @@ const CategoryAllocation: React.FC = () => {
 
           if (basicError) throw basicError;
           if (basicData) {
+            // Decrypt the income amount
+            let decryptedAmount = basicData.amount;
+            try {
+              const decrypted = decryptIncomeData({
+                ...basicData,
+                amount: basicData.amount,
+              });
+              decryptedAmount = decrypted.amount;
+            } catch (decryptError) {
+              console.error("Error decrypting income data:", basicData.id, decryptError);
+            }
+
             // Convert to enhanced format
             const frequency = basicData.frequency;
             const multipliers: Record<string, number> = {
@@ -174,10 +276,11 @@ const CategoryAllocation: React.FC = () => {
               "bi-weekly": 26 / 12,
             };
             const monthlyAmount =
-              basicData.amount * (multipliers[frequency] || 1);
+              decryptedAmount * (multipliers[frequency] || 1);
 
             incomeData = {
               ...basicData,
+              amount: decryptedAmount,
               monthly_amount: monthlyAmount,
               needs_category_allocations: [],
               wants_category_allocations: [],
@@ -222,7 +325,19 @@ const CategoryAllocation: React.FC = () => {
               const fieldKey = `${bucket.key}_${category.id}`;
 
               if (existingAllocation) {
-                defaultValues[fieldKey] = existingAllocation.allocated_amount;
+                let decryptedAmount = existingAllocation.allocated_amount;
+                // Decrypt if allocation amount is encrypted (string)
+                if (typeof existingAllocation.allocated_amount === 'string') {
+                  try {
+                    const decrypted = decryptAllocationData({
+                      allocation_amount: existingAllocation.allocated_amount,
+                    });
+                    decryptedAmount = decrypted.allocation_amount;
+                  } catch (decryptError) {
+                    console.error("Error decrypting allocation data:", existingAllocation, decryptError);
+                  }
+                }
+                defaultValues[fieldKey] = decryptedAmount;
               } else {
                 defaultValues[fieldKey] = 0;
               }
@@ -433,10 +548,16 @@ const CategoryAllocation: React.FC = () => {
           const amount = values[fieldKey] || 0;
 
           if (amount > 0) {
+            const encryptedAllocation = encryptAllocationData({
+              allocation_amount: Math.round(amount),
+            });
+            
             allAllocations.push({
               income_id: income.id,
               category_id: category.id,
-              allocated_amount: Math.round(amount),
+              allocation_amount: encryptedAllocation.allocation_amount,
+              user_id: user.id,
+              allocation_percentage: getPercentageFromAmount(amount, bucket.key),
             });
           }
         });

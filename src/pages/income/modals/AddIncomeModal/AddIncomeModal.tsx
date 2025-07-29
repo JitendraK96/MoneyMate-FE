@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { encryptIncomeData } from "@/utils/encryption";
 import { z } from "zod";
 import {
   Dialog,
@@ -191,13 +192,17 @@ const AddIncomeModal: React.FC<IncomeModalProps> = ({
 
     setIsSaving(true);
     try {
+      const encryptedData = encryptIncomeData({
+        amount: values.amount,
+      });
+
       if (isEditMode && income) {
         const { error } = await supabase
           .from("incomes")
           .update({
             source: values.source,
             description: values.description,
-            amount: values.amount,
+            amount: encryptedData.amount,
             frequency: values.frequency,
             needs_percentage: values.needs_percentage,
             wants_percentage: values.wants_percentage,
@@ -216,7 +221,7 @@ const AddIncomeModal: React.FC<IncomeModalProps> = ({
             user_id: user.id,
             source: values.source,
             description: values.description,
-            amount: values.amount,
+            amount: encryptedData.amount,
             frequency: values.frequency,
             needs_percentage: values.needs_percentage,
             wants_percentage: values.wants_percentage,

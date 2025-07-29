@@ -11,7 +11,7 @@ CREATE TABLE income_category_allocations (
     category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     allocation_percentage DECIMAL(5,2) NOT NULL CHECK (allocation_percentage >= 0 AND allocation_percentage <= 100),
-    allocation_amount DECIMAL(15,2) NOT NULL CHECK (allocation_amount >= 0),
+    allocation_amount TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

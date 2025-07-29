@@ -14,6 +14,7 @@ import DataTable from "@/components/table";
 
 import { Form, FormField } from "@/components/ui/form";
 import { toast } from "sonner";
+import { encryptTransactionData, decryptTransactionData } from "@/utils/encryption";
 import { Upload, History, Save } from "lucide-react";
 import UploadStatementModal from "./modal/UploadStatementModal";
 import EditTransactionModal from "./modal/EditTransactionModal";
@@ -233,7 +234,32 @@ const CreateExpenseSheet = () => {
 
       if (error) throw error;
 
-      setExistingTransactions(data || []);
+      // Decrypt transaction amounts
+      const decryptedTransactions = (data || []).map((transaction) => {
+        let decryptedAmount = transaction.amount;
+        try {
+          if (typeof transaction.amount === 'string') {
+            const decrypted = decryptTransactionData({
+              amount: transaction.amount,
+            });
+            decryptedAmount = decrypted.amount;
+          }
+        } catch (decryptError) {
+          console.error("Error decrypting transaction data:", transaction.id, decryptError);
+          // Fallback to parsing the amount if it's a numeric string
+          decryptedAmount = parseFloat(transaction.amount) || 0;
+        }
+        
+        return {
+          ...transaction,
+          amount: decryptedAmount,
+          // For backward compatibility, populate absolute_amount with decrypted amount
+          absolute_amount: decryptedAmount,
+          signed_amount: transaction.transaction_type === 'expense' ? -decryptedAmount : decryptedAmount,
+        };
+      });
+
+      setExistingTransactions(decryptedTransactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
       toast.error("Failed to load expense sheet transactions");
@@ -356,17 +382,23 @@ const CreateExpenseSheet = () => {
       sheetId = sheetData.id;
     }
 
-    // Prepare transactions for bulk insert
-    const transactionsForInsert = validTransactions.map((t) => ({
-      expense_sheet_id: sheetId,
-      user_id: user.id,
-      amount: t.amount,
-      description: t.payee,
-      category_id: t.category_id || null,
-      payee_id: null,
-      transaction_date: t.date,
-      transaction_type: "expense",
-    }));
+    // Prepare transactions for bulk insert with encryption
+    const transactionsForInsert = validTransactions.map((t) => {
+      const encryptedTransaction = encryptTransactionData({
+        amount: t.amount,
+      });
+      
+      return {
+        expense_sheet_id: sheetId,
+        user_id: user.id,
+        amount: encryptedTransaction.amount,
+        description: t.payee,
+        category_id: t.category_id || null,
+        payee_id: null,
+        transaction_date: t.date,
+        transaction_type: "expense",
+      };
+    });
 
     // Insert transactions
     const { error: transactionError } = await supabase

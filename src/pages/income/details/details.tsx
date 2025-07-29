@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { encryptIncomeData, decryptIncomeData } from "@/utils/encryption";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -169,7 +170,24 @@ const IncomeForm: React.FC = () => {
               .single();
 
             if (enhancedData && !error) {
-              const enhancedIncome = enhancedData as EnhancedIncome;
+              let enhancedIncome = enhancedData as EnhancedIncome;
+              
+              // Decrypt if amount is encrypted (string)
+              if (typeof enhancedData.amount === 'string') {
+                try {
+                  const decrypted = decryptIncomeData({
+                    ...enhancedData,
+                    amount: enhancedData.amount,
+                  });
+                  enhancedIncome = {
+                    ...enhancedData,
+                    amount: decrypted.amount,
+                  };
+                } catch (decryptError) {
+                  console.error("Error decrypting enhanced income data:", enhancedData.id, decryptError);
+                }
+              }
+              
               setIncome(enhancedIncome);
 
               form.reset({
@@ -195,16 +213,34 @@ const IncomeForm: React.FC = () => {
 
             if (basicError) throw basicError;
             if (basicData) {
-              setIncome(basicData);
+              let processedBasicData = basicData;
+              
+              // Decrypt if amount is encrypted (string)
+              if (typeof basicData.amount === 'string') {
+                try {
+                  const decrypted = decryptIncomeData({
+                    ...basicData,
+                    amount: basicData.amount,
+                  });
+                  processedBasicData = {
+                    ...basicData,
+                    amount: decrypted.amount,
+                  };
+                } catch (decryptError) {
+                  console.error("Error decrypting basic income data:", basicData.id, decryptError);
+                }
+              }
+              
+              setIncome(processedBasicData);
               form.reset({
-                source: basicData.source,
-                description: basicData.description || "",
-                amount: basicData.amount,
-                frequency: basicData.frequency,
-                needs_percentage: basicData.needs_percentage,
-                wants_percentage: basicData.wants_percentage,
-                savings_percentage: basicData.savings_percentage,
-                is_active: basicData.is_active,
+                source: processedBasicData.source,
+                description: processedBasicData.description || "",
+                amount: processedBasicData.amount,
+                frequency: processedBasicData.frequency,
+                needs_percentage: processedBasicData.needs_percentage,
+                wants_percentage: processedBasicData.wants_percentage,
+                savings_percentage: processedBasicData.savings_percentage,
+                is_active: processedBasicData.is_active,
               });
             }
           }
@@ -279,6 +315,10 @@ const IncomeForm: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const encryptedData = encryptIncomeData({
+        amount: values.amount,
+      });
+
       // Save or update income
       if (isEditMode && income?.id) {
         const { error } = await supabase
@@ -286,7 +326,7 @@ const IncomeForm: React.FC = () => {
           .update({
             source: values.source,
             description: values.description,
-            amount: values.amount,
+            amount: encryptedData.amount,
             frequency: values.frequency,
             needs_percentage: values.needs_percentage,
             wants_percentage: values.wants_percentage,
@@ -306,7 +346,7 @@ const IncomeForm: React.FC = () => {
               user_id: user.id,
               source: values.source,
               description: values.description,
-              amount: values.amount,
+              amount: encryptedData.amount,
               frequency: values.frequency,
               needs_percentage: values.needs_percentage,
               wants_percentage: values.wants_percentage,

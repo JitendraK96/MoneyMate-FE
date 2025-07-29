@@ -9,14 +9,12 @@ CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     expense_sheet_id UUID NOT NULL REFERENCES expense_sheets(id) ON DELETE CASCADE,
-    amount DECIMAL(15,2) NOT NULL,
+    amount TEXT NOT NULL, -- Encrypted amount field  
     description TEXT NOT NULL,
     transaction_date DATE NOT NULL,
     transaction_type VARCHAR(20) NOT NULL CHECK (transaction_type IN ('expense', 'income')),
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     payee_id UUID REFERENCES payees(id) ON DELETE SET NULL,
-    signed_amount DECIMAL(15,2) NOT NULL,
-    absolute_amount DECIMAL(15,2) NOT NULL CHECK (absolute_amount >= 0),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -30,7 +28,7 @@ CREATE INDEX idx_transactions_payee_id ON transactions(payee_id);
 CREATE INDEX idx_transactions_transaction_date ON transactions(transaction_date);
 CREATE INDEX idx_transactions_transaction_type ON transactions(transaction_type);
 CREATE INDEX idx_transactions_is_active ON transactions(is_active);
-CREATE INDEX idx_transactions_amount ON transactions(amount);
+-- Note: amount field is encrypted (TEXT) so cannot be indexed
 
 -- Composite indexes for common queries
 CREATE INDEX idx_transactions_user_sheet_date ON transactions(user_id, expense_sheet_id, transaction_date);

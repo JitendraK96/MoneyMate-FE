@@ -16,6 +16,7 @@ import DataTable from "@/components/table";
 import { getBorrowingTableColumns } from "./columnDefs";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { encryptBorrowingData } from "@/utils/encryption";
 
 interface BorrowingTableRow {
   month: number;
@@ -237,17 +238,24 @@ const Details = () => {
 
   const handleUpdate = async () => {
     setIsSaving(true);
+    
+    const encryptedData = encryptBorrowingData({
+      emi_amount: emiAmount,
+      borrowing_amount: borrowingAmount,
+      payment_details: paymentDetails || {},
+    });
+    
     const { error } = await supabase
       .from("borrowing_details")
       .update({
         title: title,
         description: description,
         start_date: startDate,
-        borrowing_amount: borrowingAmount,
+        borrowing_amount: encryptedData.borrowing_amount,
         tenure: tenure,
-        emi_amount: emiAmount,
+        emi_amount: encryptedData.emi_amount,
         paid_months: paidMonths,
-        payment_details: paymentDetails,
+        payment_details: encryptedData.payment_details,
       })
       .eq("user_id", user.id)
       .eq("id", id);
@@ -264,17 +272,24 @@ const Details = () => {
 
   const handleCreate = async () => {
     setIsSaving(true);
+    
+    const encryptedData = encryptBorrowingData({
+      emi_amount: emiAmount,
+      borrowing_amount: borrowingAmount,
+      payment_details: paymentDetails || {},
+    });
+    
     const { error } = await supabase.from("borrowing_details").insert([
       {
         user_id: user.id,
         title: title,
         description: description,
         start_date: startDate,
-        borrowing_amount: borrowingAmount,
+        borrowing_amount: encryptedData.borrowing_amount,
         tenure: tenure,
-        emi_amount: emiAmount,
+        emi_amount: encryptedData.emi_amount,
         paid_months: paidMonths,
-        payment_details: paymentDetails,
+        payment_details: encryptedData.payment_details,
         is_completed: false,
       },
     ]);

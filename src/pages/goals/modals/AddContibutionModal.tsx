@@ -16,6 +16,7 @@ import { Input, DatePicker } from "@/components/inputs";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { Button } from "@/components/inputs";
+import { encryptContributionData, encryptGoalData } from "@/utils/encryption";
 
 const ContributionFormSchema = z.object({
   amount: z
@@ -87,13 +88,18 @@ const AddContributionModal = ({
     setIsSaving(true);
 
     try {
+      // Encrypt contribution data
+      const encryptedContribution = encryptContributionData({
+        amount: values.amount,
+      });
+
       // Add contribution to database
       const { error: contributionError } = await supabase
         .from("contributions")
         .insert([
           {
             goal_id: goal.id,
-            amount: values.amount,
+            amount: encryptedContribution.amount,
             contribution_date: values.contributionDate
               .toISOString()
               .split("T")[0],
@@ -105,13 +111,19 @@ const AddContributionModal = ({
         throw new Error(contributionError.message);
       }
 
+      // Encrypt updated goal balance
+      const newBalance = goal.current_balance + values.amount;
+      const encryptedGoal = encryptGoalData({
+        target_amount: goal.target_amount,
+        current_balance: newBalance,
+      });
+
       // Update goal's current balance
       const { error: updateError } = await supabase
         .from("goals")
         .update({
-          current_balance: goal.current_balance + values.amount,
-          is_completed:
-            goal.current_balance + values.amount >= goal.target_amount,
+          current_balance: encryptedGoal.current_balance,
+          is_completed: newBalance >= goal.target_amount,
         })
         .eq("id", goal.id);
 

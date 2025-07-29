@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { RootState } from "@/store";
 import { setList } from "@/store/slices/goalSlice";
 import { useUser } from "@/context/UserContext";
+import { decryptGoalData, decryptContributionData } from "@/utils/encryption";
 import Card from "@/components/card";
 import { Button } from "@/components/inputs";
 import { CirclePlus } from "lucide-react";
@@ -50,7 +51,45 @@ const GoalsListing = () => {
           return;
         }
 
-        dispatch(setList(data || []));
+        // Decrypt the goals data
+        const decryptedGoals = (data || []).map(goal => {
+          try {
+            const decryptedGoalData = decryptGoalData({
+              ...goal,
+              target_amount: goal.target_amount,
+              current_balance: goal.current_balance,
+            });
+
+            // Decrypt contributions if they exist
+            const decryptedContributions = (goal.contributions || []).map((contribution: any) => {
+              try {
+                const decryptedContribution = decryptContributionData({
+                  ...contribution,
+                  amount: contribution.amount,
+                });
+                return {
+                  ...contribution,
+                  amount: decryptedContribution.amount,
+                };
+              } catch (decryptError) {
+                console.error("Error decrypting contribution:", contribution.id, decryptError);
+                return contribution;
+              }
+            });
+
+            return {
+              ...goal,
+              target_amount: decryptedGoalData.target_amount,
+              current_balance: decryptedGoalData.current_balance,
+              contributions: decryptedContributions,
+            };
+          } catch (decryptError) {
+            console.error("Error decrypting goal data for goal:", goal.id, decryptError);
+            return goal;
+          }
+        });
+
+        dispatch(setList(decryptedGoals));
       } catch (error) {
         console.error("Error fetching goals:", error);
         toast.error("Failed to fetch goals. Please try again.");
